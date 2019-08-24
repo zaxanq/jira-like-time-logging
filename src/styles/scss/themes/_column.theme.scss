@@ -1,0 +1,8 @@
+@mixin column-theme($palette) {
+  background-color: map-get($palette, 50);
+  border-color: map-get($palette, 300);
+
+  &:hover {
+    background-color: map-get($palette, 200);
+  }
+}

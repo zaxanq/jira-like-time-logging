@@ -1,0 +1,8 @@
+.column {
+  @include flex(flex-start, flex-start, column);
+  flex: 1;
+  height: inherit;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  overflow: auto;
+}

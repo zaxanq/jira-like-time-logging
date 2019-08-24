@@ -1,0 +1,5 @@
+@import 'themes/column.theme';
+
+.column {
+  @include column-theme($main-palette);
+}

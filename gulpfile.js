@@ -27,7 +27,7 @@ gulp.task('sass', () => {
 
 gulp.task('watch', ['browserSync', 'sass'], () => {
     gulp.watch('src/styles/scss/*.scss', ['sass']);
-    gulp.watch('src/styles/scss/*/*.scss', ['sass']);
+    gulp.watch('src/styles/scss/**/*.scss', ['sass']);
     gulp.watch('src/*.html', browserSync.reload);
     gulp.watch('src/*.hbs', browserSync.reload);
     gulp.watch('src/js/*.js', browserSync.reload);

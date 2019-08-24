@@ -1,0 +1,5 @@
+.wrapper {
+  @include size(100%, 100vh);
+  @include flex(flex-start, flex-start);
+  overflow: hidden;
+}
