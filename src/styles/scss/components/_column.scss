@@ -1,26 +1,62 @@
 $column-head-border-width: 0.2rem;
-$column-title-font-size: 1.3rem;
+$column-title-font-size: 1.1rem;
 
 .column {
   @include flex(flex-start, center, column);
+  max-width: 24rem;
   flex: 1;
   height: inherit;
   border-left: 0.1rem solid;
   border-right: 0.1rem solid;
   padding: 0 1rem;
+  @include transition(0.1s, ease-in-out, 0s, background-color);
 }
 
 .column__head {
-  @include size(100%, 6rem);
+  width: 100%;
   @include flex(flex-start, center, column);
   position: relative;
-  margin-bottom: 1rem;
+  margin-bottom: 1.8rem;
   border-bottom: $column-head-border-width solid;
+}
+
+.column__details {
+  @include size(100%);
+  @include flex(space-between, center);
+  margin: 1rem 0;
+}
+
+.column__date {
+  .column__date-day {
+    font-weight: 500;
+  }
+}
+
+.column__hours {
+  font-weight: 500;
+}
+
+.column__progress {
+  $progress-height: 1rem;
+  @include size(100%, $progress-height);
+  margin-bottom: 1.2rem;
+  border-radius: $progress-height / 2;
+  overflow: hidden;
+}
+
+.column__progress--done {
+  height: 100%;
+  @include transition(0.35s, ease-in-out, 0.05s, width);
+}
+
+//temporary
+#column-1__progress--done {
+  width: 93.75%;
 }
 
 .column__title {
   position: absolute;
-  padding: 0 0.5rem;
+  padding: 0 1.8rem;
   bottom: -(($column-title-font-size + $column-head-border-width) / 2);
   font-size: $column-title-font-size;
   text-transform: uppercase;

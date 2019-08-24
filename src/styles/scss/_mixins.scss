@@ -12,3 +12,15 @@
     flex-direction: $flex-direction;
   }
 }
+
+@mixin transition($time, $easing: ease-in-out, $delay: 0s, $property: all) {
+  transition-duration: $time;
+  transition-timing-function: $easing;
+  @if $property != all {
+    transition-property: $property;
+    will-change: $property;
+  }
+  @if $delay != 0s {
+    transition-delay: $delay;
+  }
+}

@@ -12,6 +12,22 @@
     }
   }
 
+  .column__details {
+    color: map-get($palette, 800);
+  }
+
+  .column__date-day {
+    color: map-get($palette, 1300);
+  }
+
+  .column__progress {
+    background-color: map-get($palette, 400);
+  }
+
+  .column__progress--done {
+    background-color: map-get($palette, 1100);
+  }
+
   .column__title {
     background-color: $column-bg;
     color: map-get($palette, 600);
