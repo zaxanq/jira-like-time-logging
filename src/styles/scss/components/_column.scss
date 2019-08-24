@@ -1,8 +1,35 @@
+$column-head-border-width: 0.2rem;
+$column-title-font-size: 1.3rem;
+
 .column {
-  @include flex(flex-start, flex-start, column);
+  @include flex(flex-start, center, column);
   flex: 1;
   height: inherit;
-  border-left: 1px solid;
-  border-right: 1px solid;
+  border-left: 0.1rem solid;
+  border-right: 0.1rem solid;
+  padding: 0 1rem;
+}
+
+.column__head {
+  @include size(100%, 6rem);
+  @include flex(flex-start, center, column);
+  position: relative;
+  margin-bottom: 1rem;
+  border-bottom: $column-head-border-width solid;
+}
+
+.column__title {
+  position: absolute;
+  padding: 0 0.5rem;
+  bottom: -(($column-title-font-size + $column-head-border-width) / 2);
+  font-size: $column-title-font-size;
+  text-transform: uppercase;
+  line-height: 1;
+  letter-spacing: 0.05rem;
+}
+
+.column__body {
+  width: 100%;
+  flex: 1;
   overflow: auto;
 }

@@ -1,5 +1,10 @@
 @import 'themes/column.theme';
+@import 'themes/card.theme';
 
 .column {
   @include column-theme($main-palette);
+}
+
+.card {
+  @include card-theme($main-palette);
 }
