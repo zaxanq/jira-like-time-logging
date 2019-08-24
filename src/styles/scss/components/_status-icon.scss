@@ -1,0 +1,27 @@
+.status-icon {
+  @include inline-flex(center, center);
+  @include size(1.5rem);
+  display: inline-flex;
+
+  border-radius: 0.3rem;
+
+  &::before {
+    font-style: normal;
+    color: #fff;
+  }
+}
+
+.status-icon__task {
+  &::before {
+    content: '\2714';
+    font-size: 1.1rem;
+  }
+}
+
+.status-icon__bug {
+  &::before {
+    content: '!';
+    font-weight: 500;
+    font-size: 1.3rem;
+  }
+}

@@ -1,0 +1,8 @@
+@mixin status-icon() {
+  &.status-icon__task {
+    background-color: limegreen;
+  }
+  &.status-icon__bug {
+    background-color: darkorange;
+  }
+}

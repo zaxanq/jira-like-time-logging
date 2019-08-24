@@ -1,8 +1,8 @@
 @mixin column-theme($palette) {
-  $column-bg: map-get($palette, 50);
-  $column-hover-bg: map-get($palette, 100);
+  $column-bg: map-get($palette, 100);
+  $column-hover-bg: map-get($palette, 200);
   background-color: $column-bg;
-  border-color: map-get($palette, 200);
+  border-color: map-get($palette, 400);
 
   &:hover {
     background-color: $column-hover-bg;
@@ -34,6 +34,6 @@
   }
 
   .column__head {
-    border-color: map-get($palette, 200);
+    border-color: map-get($palette, 300);
   }
 }

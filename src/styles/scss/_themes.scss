@@ -1,10 +1,15 @@
 @import 'themes/column.theme';
 @import 'themes/card.theme';
+@import 'themes/status-icon.theme';
 
 .column {
   @include column-theme($main-palette);
 }
 
 .card {
-  @include card-theme($main-palette);
+  @include card-theme($main-palette, $accents-palette);
+}
+
+.status-icon {
+  @include status-icon();
 }

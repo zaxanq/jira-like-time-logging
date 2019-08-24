@@ -1,7 +1,16 @@
-@mixin card-theme($palette) {
-  background-color: map-get($palette, 200);
+@mixin card-theme($palette, $accents) {
+  background-color: map-get($palette, 50);
+  border-color: map-get($palette, 400);
 
-  &:hover {
-    background-color: map-get($palette, 400);
+  .card__title {
+    color: map-get($accents, 1000);
+  }
+
+  .card__description {
+    color: map-get($palette, 600);
+  }
+
+  .card__logged-time {
+    color: map-get($accents, 1300);
   }
 }

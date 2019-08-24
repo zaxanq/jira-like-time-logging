@@ -1,5 +1,51 @@
 .card {
+  @include flex(flex-start, flex-start, column);
   width: 100%;
-  min-height: 6rem;
+  min-height: 8rem;
+  padding: 0.6rem 1rem;
   margin-bottom: 1rem;
+  border: 0.1rem solid;
+  border-radius: 0.25rem;
+  font-size: 1.5rem;
+  box-shadow: 0 0.1rem 0.4rem 0 rgba(0, 0, 0, 0.1);
+}
+
+.card__header {
+  margin-bottom: 0.4rem;
+}
+
+.card__title {
+  font-weight: 500;
+}
+
+.card__body {
+  width: inherit;
+  flex: 1;
+}
+
+.card__description {
+  width: inherit;
+  font-size: 1.4rem;
+}
+
+.card__footer {
+  width: 100%;
+  @include flex(space-between, center);
+}
+
+.card__task {
+  @include flex(flex-start, flex-end);
+}
+
+.card__status-icon {
+  margin-bottom: 0.1rem;
+}
+
+.card__task-name {
+  margin-left: 0.5rem;
+  font-size: 1.4rem;
+}
+
+.card__logged-time {
+  font-weight: 500;
 }

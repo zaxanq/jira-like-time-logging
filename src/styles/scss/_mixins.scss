@@ -13,6 +13,12 @@
   }
 }
 
+@mixin inline-flex($justify-content, $align-items) {
+  display: inline-flex;
+  justify-content: $justify-content;
+  align-items: $align-items;
+}
+
 @mixin transition($time, $easing: ease-in-out, $delay: 0s, $property: all) {
   transition-duration: $time;
   transition-timing-function: $easing;
