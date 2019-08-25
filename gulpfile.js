@@ -8,7 +8,8 @@ gulp.task('browserSync', function() {
         server: {
             baseDir: 'src',
             routes: {
-                '/styles': 'src/styles/css'
+                '/styles': 'src/styles/css',
+                '/js': 'src/js',
             }
         },
     });

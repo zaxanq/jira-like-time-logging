@@ -1,6 +1,10 @@
 $column-head-border-width: 0.2rem;
 $column-title-font-size: 1.1rem;
 
+log-column {
+  box-sizing: border-box;
+}
+
 .column {
   @include flex(flex-start, center, column);
   max-width: 28rem;
