@@ -1,8 +1,8 @@
-@mixin column-theme($palette) {
-  $column-bg: map-get($palette, 100);
-  $column-hover-bg: map-get($palette, 200);
+@mixin column-theme($main, $dark, $accents) {
+  $column-bg: map-get($main, 100);
+  $column-hover-bg: map-get($main, 200);
   background-color: $column-bg;
-  border-color: map-get($palette, 400);
+  border-color: map-get($main, 600);
 
   &:hover {
     background-color: $column-hover-bg;
@@ -13,27 +13,49 @@
   }
 
   .column__details {
-    color: map-get($palette, 800);
+    color: map-get($dark, 50);
   }
 
   .column__date-day {
-    color: map-get($palette, 1300);
+    color: map-get($dark, 800);
   }
 
   .column__progress {
-    background-color: map-get($palette, 400);
+    background-color: map-get($main, 600);
   }
 
   .column__progress--done {
-    background-color: map-get($palette, 1100);
+    background-color: map-get($accents, 500);
   }
 
   .column__title {
     background-color: $column-bg;
-    color: map-get($palette, 600);
+    color: map-get($main, 1500);
   }
 
   .column__head {
-    border-color: map-get($palette, 300);
+    border-color: map-get($main, 600);
+  }
+
+  .column__buttons {
+    background-color: map-get($main, 200);
+    border-color: map-get($main, 1100);
+  }
+
+  .column__button {
+    border-color: inherit;
+    background-color: map-get($main, 400);
+
+    &:hover {
+      background-color: map-get($main, 800);
+
+      &::before {
+        color: map-get($dark, 300);
+      }
+    }
+
+    &::before {
+      color: map-get($main, 1500);
+    }
   }
 }

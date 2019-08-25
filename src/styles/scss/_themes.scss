@@ -3,13 +3,13 @@
 @import 'themes/status-icon.theme';
 
 .column {
-  @include column-theme($main-palette);
+  @include column-theme($main-palette, $dark-palette, $accents-palette);
 }
 
 .card {
-  @include card-theme($main-palette, $accents-palette);
+  @include card-theme($main-palette, $dark-palette, $accents-palette);
 }
 
 .status-icon {
-  @include status-icon();
+  @include status-icon($main-palette, $dark-palette, $accents-palette);
 }

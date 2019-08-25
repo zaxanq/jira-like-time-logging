@@ -1,8 +1,11 @@
-@mixin status-icon() {
+@mixin status-icon($main, $dark, $accents) {
   &.status-icon__task {
-    background-color: limegreen;
+    background-color: $status-icon--task;
   }
   &.status-icon__bug {
-    background-color: darkorange;
+    background-color: $status-icon--bug;
+  }
+  &.status-icon__urgent {
+    background-color: $status-icon--urgent;
   }
 }

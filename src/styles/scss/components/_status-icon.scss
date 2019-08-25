@@ -1,8 +1,6 @@
 .status-icon {
-  @include inline-flex(center, center);
   @include size(1.5rem);
-  display: inline-flex;
-
+  @include inline-flex(center, center);
   border-radius: 0.3rem;
 
   &::before {
@@ -19,6 +17,14 @@
 }
 
 .status-icon__bug {
+  &::before {
+    content: '\2666';
+    font-weight: 500;
+    font-size: 1.4rem;
+  }
+}
+
+.status-icon__urgent {
   &::before {
     content: '!';
     font-weight: 500;

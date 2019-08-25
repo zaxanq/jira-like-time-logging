@@ -70,6 +70,65 @@ $progress-height: 1.4rem;
 
 .column__body {
   width: 100%;
+  @include flex(flex-start, center, column);
   flex: 1;
   //overflow: auto;
+}
+
+.column__card {
+  box-shadow: 0 0.1rem 0.4rem 0 rgba(0, 0, 0, 0.1);
+}
+
+.column__buttons {
+  @include size(60%, 4rem);
+  @include flex(flex-start, flex-start);
+  border: 0.1rem solid;
+  border-radius: 2rem;
+  overflow: hidden;
+
+  &--hidden {
+    opacity: 0;
+    @include transition(0.15s, ease-in-out, 0, opacity);
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.column__button {
+  @include size(50%, 100%);
+  @include flex(center, center);
+  border: 0;
+  background: transparent;
+  outline: none;
+  @include transition(0.1s, ease-in-out, 0);
+
+  &:first-child {
+    border-right: 0.1rem solid;
+  }
+
+  &:last-child {
+    border-left: 0.1rem solid;
+  }
+
+  &::before {
+    content: '';
+    @include size(1.7rem);
+    line-height: 1.1;
+    border-radius: 50%;
+    border: 0.1rem solid;
+  }
+}
+
+.buttons__add-task {
+  &::before {
+    content: '+';
+  }
+}
+
+.buttons__remove {
+  &::before {
+    content: '‒';
+  }
 }
