@@ -3,7 +3,8 @@ $column-title-font-size: 1.1rem;
 
 .column {
   @include flex(flex-start, center, column);
-  max-width: 24rem;
+  max-width: 28rem;
+  min-width: 20rem;
   flex: 1;
   height: inherit;
   border-left: 0.1rem solid;
@@ -83,7 +84,7 @@ $progress-height: 1.4rem;
   @include size(60%, 4rem);
   @include flex(flex-start, flex-start);
   border: 0.1rem solid;
-  border-radius: 2rem;
+  border-radius: 0.75rem;
   overflow: hidden;
 
   &--hidden {
