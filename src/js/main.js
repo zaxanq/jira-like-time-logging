@@ -29,7 +29,7 @@ class BaseClass {
                         title: '',
                         description: '',
                         taskType: '',
-                        taskId: null,
+                        taskName: '',
                         timeLogged: null,
                     }
                 }
@@ -76,7 +76,7 @@ class BaseClass {
     }
 
     id(idName) {
-        return document.getElementsByClassName(idName);
+        return document.getElementById(idName);
     }
 
     createElement(tag, options, parent, append = true) {
@@ -110,12 +110,65 @@ class CardClass extends HTMLElement {
         super();
     }
 
-    create() {
-        let newColumn = Base.createElement('log-card',
-            {'class': 'card', 'id': `card-${++Base.Elements.cards.count}`},
-            Base.class('wrapper')[0]);
+    create(parentId) {
+        let newCard = Base.createElement('log-card',
+            {'class': ['column__card', 'card'], 'id': `card-${++Base.Elements.cards.count}`},
+            Base.Dom(`#${parentId} .column__body`)[0]);
+
+        this.addToElementsObject(parentId);
+
+        this.createCardHeader(newCard);
+        this.createCardBody(newCard);
+        this.createCardFooter(newCard);
     }
 
+    addToElementsObject(parentId) {
+        Base.Elements.cards.children[Base.Elements.cards.count] = {
+            parentId: parentId,
+            id: Base.Elements.cards.count,
+            title: 'Nazwa karty',
+            description: 'Opis karty',
+            taskType: 'feature',
+            taskName: 'Nazwa taska',
+            timeLogged: null,
+        };
+    }
+
+    createCardHeader(newCard) {
+        let newCardHeader = Base.createElement('div',
+            {'class': 'card__header'}, newCard);
+
+        let newCardHeaderTitle = Base.createElement('span',
+            {'class': 'card__title'}, newCardHeader);
+        newCardHeaderTitle.innerText = Base.Elements.cards.children[Base.Elements.cards.count].title;
+    }
+
+    createCardBody(newCard) {
+        let newCardBody = Base.createElement('div',
+            {'class': 'card__body'}, newCard);
+
+        let newCardBodyDescription = Base.createElement('span',
+            {'class': 'card__description'}, newCardBody);
+        newCardBodyDescription.innerText = Base.Elements.cards.children[Base.Elements.cards.count].description;
+    }
+
+    createCardFooter(newCard) {
+        let newCardFooter = Base.createElement('div',
+            {'class': 'card__footer'}, newCard);
+
+        let newCardFooterTask = Base.createElement('div',
+            {'class': 'card__task'}, newCardFooter);
+
+        let newCardFooterTaskIcon = Base.createElement('i',
+            {'class': ['card__status-icon', 'status-icon', 'status-icon__feature']}, newCardFooterTask);
+
+        let newCardFooterTaskName = Base.createElement('span',
+            {'class': 'card__task-name'}, newCardFooterTask);
+        newCardFooterTaskName.innerText = Base.Elements.cards.children[Base.Elements.cards.count].taskName;
+
+        let newCardFooterLoggedTime = Base.createElement('span',
+            {'class': 'card__logged-time'}, newCardFooter);
+    }
 }
 customElements.define('log-card', CardClass);
 let Card = new CardClass;
@@ -153,8 +206,11 @@ class ColumnClass extends HTMLElement {
 
         this.addToElementsObject();
 
-        this.createHeadElements(newColumn);
-        this.createBodyElements(newColumn);
+        this.createColumnHead(newColumn);
+        this.createColumnBody(newColumn);
+        this.createColumnFooter(newColumn);
+
+        this.addButtonListener(newColumn.id);
     }
 
     addToElementsObject() {
@@ -172,7 +228,7 @@ class ColumnClass extends HTMLElement {
 
     }
 
-    createHeadElements(newColumn) {
+    createColumnHead(newColumn) {
         let newColumnHead = Base.createElement('div',
             {'class': 'column__head'}, newColumn);
         let newColumnHeadDetails = Base.createElement('div',
@@ -211,8 +267,29 @@ class ColumnClass extends HTMLElement {
         newColumnHeadTitle.innerText = Base.Elements.columns.children[Base.Elements.columns.count].title;
     }
 
-    createBodyElements(newColumn) {
+    createColumnBody(newColumn) {
+        let newColumnBody = Base.createElement('idv',
+            {'class': 'column__body'}, newColumn);
+    }
 
+    createColumnFooter(newColumn) {
+        let newColumnFooter = Base.createElement('div',
+            {'class': 'column__footer'}, newColumn);
+
+        let newColumnButtons = Base.createElement('div',
+            {'class': ['column__buttons', 'column__buttons--hidden']}, newColumnFooter);
+
+        let newColumnButtonAdd = Base.createElement('button',
+            {'class': ['buttons__add-task', 'button', 'column__button']}, newColumnButtons);
+
+        let newColumnButtonRemove = Base.createElement('button',
+            {'class': ['buttons__remove', 'button', 'column__button']}, newColumnButtons);
+    }
+
+    addButtonListener(parentId) {
+        Base.Dom(`#${parentId} .buttons__add-task`)[0].addEventListener('click', function() {
+            Card.create(parentId);
+        });
     }
 
 }
@@ -227,10 +304,15 @@ class Main {
 
     init() {
         this.createColumns(5);
+        this.createCard('column-1');
     }
 
     createColumns(quantity) {
         for (let i = 0; i < quantity; i++) Column.create();
+    }
+
+    createCard(parentId) {
+        Card.create(parentId);
     }
 }
 

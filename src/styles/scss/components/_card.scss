@@ -1,3 +1,7 @@
+log-card {
+  box-sizing: border-box;
+}
+
 .card {
   @include flex(flex-start, flex-start, column);
   width: 100%;

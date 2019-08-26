@@ -76,17 +76,22 @@ $progress-height: 1.4rem;
 .column__body {
   width: 100%;
   @include flex(flex-start, center, column);
-  flex: 1;
-  //overflow: auto;
+  overflow: auto;
 }
 
 .column__card {
   box-shadow: 0 0.1rem 0.4rem 0 rgba(0, 0, 0, 0.1);
 }
 
+.column__footer {
+  width: 100%;
+  @include flex(center, flex-start);
+}
+
 .column__buttons {
   @include size(60%, 4rem);
   @include flex(flex-start, flex-start);
+  margin: 1rem 0;
   border: 0.1rem solid;
   border-radius: 0.75rem;
   overflow: hidden;
