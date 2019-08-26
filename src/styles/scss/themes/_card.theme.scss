@@ -1,4 +1,4 @@
-@mixin card-theme($main, $dark, $accents) {
+@mixin card-theme($main, $dark, $accents, $error) {
   background-color: map-get($main, 50);
   border-color: map-get($main, 800);
 

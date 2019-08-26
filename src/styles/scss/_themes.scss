@@ -5,21 +5,21 @@
 @import 'themes/status-icon.theme';
 
 .column {
-  @include column-theme($main-palette, $dark-palette, $accents-palette);
+  @include column-theme($main-palette, $dark-palette, $accents-palette, $error-palette);
 }
 
 .card {
-  @include card-theme($main-palette, $dark-palette, $accents-palette);
+  @include card-theme($main-palette, $dark-palette, $accents-palette, $error-palette);
 }
 
 .status-icon {
-  @include status-icon($main-palette, $dark-palette, $accents-palette);
+  @include status-icon($main-palette, $dark-palette, $accents-palette, $error-palette);
 }
 
 .dialog {
-  @include dialog($main-palette, $dark-palette, $accents-palette);
+  @include dialog($main-palette, $dark-palette, $accents-palette, $error-palette);
 }
 
 .input {
-  @include input($main-palette, $dark-palette, $accents-palette);
+  @include input($main-palette, $dark-palette, $accents-palette, $error-palette);
 }

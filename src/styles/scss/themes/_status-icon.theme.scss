@@ -1,4 +1,4 @@
-@mixin status-icon($main, $dark, $accents) {
+@mixin status-icon($main, $dark, $accents, $error) {
   &.status-icon__feature {
     background-color: $status-icon--task;
   }

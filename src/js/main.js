@@ -39,6 +39,7 @@ class BaseClass {
                 title: 'Log time',
                 inputs: {
                     names: ['task-name', 'description', 'task-type', 'time-spent'],
+                    DOM: [],
                 }
             }
         };
@@ -295,7 +296,7 @@ class ColumnClass extends HTMLElement {
 
     addButtonListener(parentId) {
         Base.Dom(`#${parentId} .buttons__add-task`)[0].addEventListener('click', function() {
-            if (Dialog.open()) Card.create(parentId);
+            if (Dialog.open(parentId)) Card.create(parentId);
         });
     }
 
@@ -308,21 +309,24 @@ class DialogClass extends HTMLElement {
         super();
     }
 
-    open() {
+    open(columnId) {
         Base.class('dialog-overlay')[0].removeClass('dialog-overlay--hidden');
         Base.class('dialog')[0].removeClass('dialog--hidden');
         this.state.opened = !this.state.opened;
+        this.state.openedBy = columnId;
     }
 
     close() {
         Base.class('dialog-overlay')[0].addClass('dialog-overlay--hidden');
         Base.class('dialog')[0].addClass('dialog--hidden');
         this.state.opened = !this.state.opened;
+        this.state.openedBy = '';
     }
 
     init() {
         this.state = {
-            opened: false
+            opened: false,
+            openedBy: '',
         };
 
         let dialogOverlay = Base.createElement('div',
@@ -332,7 +336,7 @@ class DialogClass extends HTMLElement {
             {'class': ['dialog', 'dialog--hidden']}, dialogOverlay);
 
         this.createDialogContent(dialog);
-        this.addButtonListener();
+        this.addListeners();
     }
 
     createDialogContent(dialog) {
@@ -363,17 +367,19 @@ class DialogClass extends HTMLElement {
                         {'class': ['dialog__input--option', 'select__option', `input__${input}`]}, dialogInput);
                     dialogInputOption.innerText = type;
                 }
+                dialogInput.required = true;
             } else {
                 dialogInput = Base.createElement('input',
                     {'class': ['dialog__input', 'input', `input__${input}`]}, dialogInputContainer);
                 dialogInput.type = 'text';
+                dialogInput.required = true;
             }
+            Base.Elements.dialog.inputs.DOM.push(dialogInput);
             let dialogInputLabel = Base.createElement('label',
                 {'class': ['dialog__input-label', 'input-label', `input-label__${input}`]}, dialogInputContainer);
 
             dialogInput.name = `input__${input}`;
             dialogInputLabel.innerText = input;
-            dialogInput.required = true;
             dialogInput.minLength = 1;
         }
 
@@ -392,13 +398,41 @@ class DialogClass extends HTMLElement {
         dialogButtonCancel.innerText = 'Cancel';
     }
 
-    addButtonListener() {
-        Base.Dom(`.dialog__button.dialog__button--cancel`)[0].addEventListener('click', () => {
-            console.info(this.state.opened);
+    addListeners() {
+        //@TODO: add listener for buttons to remove red warning border on input
+        Base.Dom(`.dialog__button.dialog__button--cancel`)[0].addEventListener('click', event => {
+            event.stopPropagation();
             if (this.state.opened === true) {
                 this.close();
             }
         });
+        Base.Dom(`.dialog__button.dialog__button--submit`)[0].addEventListener('click', event => {
+            event.stopPropagation();
+            if (this.state.opened === true && this.validation() === true) {
+                Card.create(this.state.openedBy);
+                this.close();
+            }
+        });
+        Base.Dom(`.dialog-overlay`)[0].addEventListener('click', event => {
+            event.stopPropagation();
+            if (this.state.opened === true) {
+                this.close();
+            }
+        });
+        Base.Dom(`.dialog`)[0].addEventListener('click', event => {
+            event.stopPropagation();
+        });
+    }
+
+    validation() {
+        console.log(Base.Elements.dialog.inputs.DOM);
+        for (let input of Base.Elements.dialog.inputs.DOM) {
+            if (!input.checkValidity()) {
+                input.addClass('dialog__input--invalid');
+                return false;
+            }
+        }
+        return true;
     }
 }
 customElements.define('log-dialog', DialogClass);
@@ -408,12 +442,10 @@ class Main {
     constructor() {
         Base.init();
         Dialog.init();
-        Dialog.open();
     }
 
     init() {
         this.createColumns(5);
-        this.createCard('column-1');
     }
 
     createColumns(quantity) {
@@ -421,7 +453,6 @@ class Main {
     }
 
     createCard(parentId) {
-        Card.create(parentId);
     }
 
 }

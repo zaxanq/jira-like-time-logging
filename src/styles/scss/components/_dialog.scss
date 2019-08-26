@@ -61,6 +61,10 @@ $dialog-padding-horizontal: 5rem;
     }
 }
 
+.dialog__input.dialog__input--invalid {
+    border: 0.2rem solid;
+}
+
 .dialog__footer {
     width: 100%;
 }

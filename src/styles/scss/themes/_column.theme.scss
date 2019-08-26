@@ -1,4 +1,4 @@
-@mixin column-theme($main, $dark, $accents) {
+@mixin column-theme($main, $dark, $accents, $error) {
   $column-bg: map-get($main, 100);
   $column-hover-bg: map-get($main, 200);
   background-color: $column-bg;

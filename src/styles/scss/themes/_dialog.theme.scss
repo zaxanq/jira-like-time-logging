@@ -1,4 +1,4 @@
-@mixin dialog($main, $dark, $accents) {
+@mixin dialog($main, $dark, $accents, $error) {
     .dialog__title {
         color: map-get($dark, 1000);
     }
@@ -19,5 +19,9 @@
         &:hover {
             background-color: map-get($main, 800);
         }
+    }
+
+    .dialog__input--invalid {
+        border-color: map-get($error, 200);
     }
 }

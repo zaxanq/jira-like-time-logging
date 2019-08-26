@@ -1,4 +1,4 @@
-@mixin input($main, $dark, $accents) {
+@mixin input($main, $dark, $accents, $error) {
 
     &-label {
         color: map-get($dark, 200);
