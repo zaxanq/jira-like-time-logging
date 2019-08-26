@@ -1,0 +1,44 @@
+$input-padding-vertical: 1.5rem;
+$input-padding-horizontal: 2.8rem;
+
+.input-container {
+    position: relative;
+}
+
+.input-label {
+    position: absolute;
+}
+
+.input-container {
+    width: 100%;
+    @include flex(flex-start, center);
+}
+
+.input {
+    width: 100%;
+    padding: $input-padding-vertical $input-padding-horizontal;
+    border: 0.1rem solid;
+    border-radius: $common-border-radius;
+
+    &:active,
+    &:focus,
+    &:valid {
+        & + .input-label {
+            margin-left: $input-padding-horizontal / 4;
+            margin-top: -$input-padding-vertical;
+            font-size: 1.2rem;
+        }
+    }
+}
+
+.input-label {
+    width: 100%;
+    margin-left: $input-padding-horizontal;
+    pointer-events: none;
+
+    @include transition(0.15s, ease-in-out, 0s);
+}
+
+.select__option {
+
+}

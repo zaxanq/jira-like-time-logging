@@ -14,6 +14,12 @@ log-column {
   border-left: 0.1rem solid;
   border-right: 0.1rem solid;
   padding: 0 1rem;
+
+  &:hover {
+    .column__buttons {
+      opacity: 1;
+    }
+  }
 }
 
 .column,
@@ -91,18 +97,15 @@ $progress-height: 1.4rem;
 .column__buttons {
   @include size(60%, 4rem);
   @include flex(flex-start, flex-start);
+  opacity: 0;
   margin: 1rem 0;
   border: 0.1rem solid;
   border-radius: 0.75rem;
   overflow: hidden;
+  @include transition(0.25s, ease-in-out, 0);
 
-  &--hidden {
-    opacity: 0;
-    @include transition(0.15s, ease-in-out, 0, opacity);
-
-    &:hover {
-      opacity: 1;
-    }
+  .button {
+    border-radius: 0;
   }
 }
 

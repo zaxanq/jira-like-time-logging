@@ -1,5 +1,7 @@
 @import 'themes/column.theme';
 @import 'themes/card.theme';
+@import 'themes/dialog.theme';
+@import 'themes/input.theme';
 @import 'themes/status-icon.theme';
 
 .column {
@@ -12,4 +14,12 @@
 
 .status-icon {
   @include status-icon($main-palette, $dark-palette, $accents-palette);
+}
+
+.dialog {
+  @include dialog($main-palette, $dark-palette, $accents-palette);
+}
+
+.input {
+  @include input($main-palette, $dark-palette, $accents-palette);
 }

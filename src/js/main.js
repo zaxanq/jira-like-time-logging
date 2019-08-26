@@ -7,6 +7,7 @@ class BaseClass {
     app() {
         this.totalTime = {number: 480, string: '8h'};
         this.Elements = {
+            main: this.Dom('main.wrapper')[0],
             columns: {
                 count: 0,
                 children: {
@@ -32,6 +33,12 @@ class BaseClass {
                         taskName: '',
                         timeLogged: null,
                     }
+                }
+            },
+            dialog: {
+                title: 'Log time',
+                inputs: {
+                    names: ['task-name', 'description', 'task-type', 'time-spent'],
                 }
             }
         };
@@ -202,7 +209,7 @@ class ColumnClass extends HTMLElement {
     create() {
         let newColumn = Base.createElement('log-column',
             {'class': 'column', 'id': `column-${++Base.Elements.columns.count}`},
-            Base.class('wrapper')[0]);
+            Base.Elements.main);
 
         this.addToElementsObject();
 
@@ -277,7 +284,7 @@ class ColumnClass extends HTMLElement {
             {'class': 'column__footer'}, newColumn);
 
         let newColumnButtons = Base.createElement('div',
-            {'class': ['column__buttons', 'column__buttons--hidden']}, newColumnFooter);
+            {'class': 'column__buttons'}, newColumnFooter);
 
         let newColumnButtonAdd = Base.createElement('button',
             {'class': ['buttons__add-task', 'button', 'column__button']}, newColumnButtons);
@@ -288,7 +295,7 @@ class ColumnClass extends HTMLElement {
 
     addButtonListener(parentId) {
         Base.Dom(`#${parentId} .buttons__add-task`)[0].addEventListener('click', function() {
-            Card.create(parentId);
+            if (Dialog.open()) Card.create(parentId);
         });
     }
 
@@ -296,10 +303,112 @@ class ColumnClass extends HTMLElement {
 customElements.define('log-column', ColumnClass);
 let Column = new ColumnClass;
 
+class DialogClass extends HTMLElement {
+    constructor() {
+        super();
+    }
+
+    open() {
+        Base.class('dialog-overlay')[0].removeClass('dialog-overlay--hidden');
+        Base.class('dialog')[0].removeClass('dialog--hidden');
+        this.state.opened = !this.state.opened;
+    }
+
+    close() {
+        Base.class('dialog-overlay')[0].addClass('dialog-overlay--hidden');
+        Base.class('dialog')[0].addClass('dialog--hidden');
+        this.state.opened = !this.state.opened;
+    }
+
+    init() {
+        this.state = {
+            opened: false
+        };
+
+        let dialogOverlay = Base.createElement('div',
+            {'class': ['dialog-overlay', 'dialog-overlay--hidden']}, Base.Elements.main);
+
+        let dialog = Base.createElement('log-dialog',
+            {'class': ['dialog', 'dialog--hidden']}, dialogOverlay);
+
+        this.createDialogContent(dialog);
+        this.addButtonListener();
+    }
+
+    createDialogContent(dialog) {
+        let dialogHeader = Base.createElement('div',
+            {'class': 'dialog__header'}, dialog);
+
+        let dialogTitle = Base.createElement('h2',
+            {'class': 'dialog__title'}, dialogHeader);
+        dialogTitle.innerText = 'Log Time';
+
+        let dialogBody = Base.createElement('div',
+            {'class': 'dialog__body'}, dialog);
+        dialogTitle.innerText = 'Log Time';
+
+        for (let input of Base.Elements.dialog.inputs.names) {
+            let dialogInputContainer = Base.createElement('div',
+                {'class': ['dialog__input-container', 'input-container', `input-container__${input}`]}, dialogBody);
+            let dialogInput;
+            if (input === 'description') {
+                dialogInput = Base.createElement('textarea',
+                    {'class': ['dialog__input', 'input', `input__${input}`]}, dialogInputContainer);
+            } else if (input === 'task-type') {
+                dialogInput = Base.createElement('select',
+                    {'class': ['dialog__input', 'input', 'select', `input__${input}`]}, dialogInputContainer);
+
+                for (let type of ['feature', 'bug', 'urgent']) {
+                    let dialogInputOption = Base.createElement('option',
+                        {'class': ['dialog__input--option', 'select__option', `input__${input}`]}, dialogInput);
+                    dialogInputOption.innerText = type;
+                }
+            } else {
+                dialogInput = Base.createElement('input',
+                    {'class': ['dialog__input', 'input', `input__${input}`]}, dialogInputContainer);
+                dialogInput.type = 'text';
+            }
+            let dialogInputLabel = Base.createElement('label',
+                {'class': ['dialog__input-label', 'input-label', `input-label__${input}`]}, dialogInputContainer);
+
+            dialogInput.name = `input__${input}`;
+            dialogInputLabel.innerText = input;
+            dialogInput.required = true;
+            dialogInput.minLength = 1;
+        }
+
+        let dialogFooter = Base.createElement('div',
+            {'class': 'dialog__footer'}, dialog);
+
+        let dialogButtons = Base.createElement('div',
+            {'class': 'dialog__buttons'}, dialogFooter);
+
+        let dialogButtonSubmit = Base.createElement('button',
+            {'class': ['dialog__button', 'button', 'dialog__button--submit']}, dialogButtons);
+        dialogButtonSubmit.innerText = 'Submit';
+
+        let dialogButtonCancel = Base.createElement('button',
+            {'class': ['dialog__button', 'button', 'dialog__button--cancel']}, dialogButtons);
+        dialogButtonCancel.innerText = 'Cancel';
+    }
+
+    addButtonListener() {
+        Base.Dom(`.dialog__button.dialog__button--cancel`)[0].addEventListener('click', () => {
+            console.info(this.state.opened);
+            if (this.state.opened === true) {
+                this.close();
+            }
+        });
+    }
+}
+customElements.define('log-dialog', DialogClass);
+let Dialog = new DialogClass;
 
 class Main {
     constructor() {
         Base.init();
+        Dialog.init();
+        Dialog.open();
     }
 
     init() {
@@ -314,6 +423,7 @@ class Main {
     createCard(parentId) {
         Card.create(parentId);
     }
+
 }
 
 (new Main()).init();

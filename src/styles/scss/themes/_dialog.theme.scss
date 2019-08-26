@@ -1,0 +1,23 @@
+@mixin dialog($main, $dark, $accents) {
+    .dialog__title {
+        color: map-get($dark, 1000);
+    }
+
+    .dialog__button--submit {
+        background-color: map-get($accents, 500);
+        color: map-get($main, 50);
+
+        &:hover {
+            background-color: map-get($accents, 600);
+        }
+    }
+
+    .dialog__button--cancel {
+        background-color: map-get($main, 600);
+        color: map-get($dark, 400);
+
+        &:hover {
+            background-color: map-get($main, 800);
+        }
+    }
+}

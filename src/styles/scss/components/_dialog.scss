@@ -1,0 +1,92 @@
+log-dialog {
+    box-sizing: border-box;
+}
+
+$dialog-padding-vertical: 3rem;
+$dialog-padding-horizontal: 5rem;
+
+.dialog-overlay {
+    position: absolute;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    @include size(100%, 100vh);
+    @include flex(center, center);
+    background-color: rgba(0, 0, 0, 0.5);
+    @include transition(0.25s, ease-in-out, 0.05s, opacity);
+
+    &--hidden {
+        opacity: 0;
+        pointer-events: none;
+
+    }
+}
+
+.dialog {
+    @include size(40rem, 60rem);
+    @include flex(flex-start, center, column);
+    //min-width: 40vw;
+    //min-height: 60vh;
+    //max-width: 64vw;
+    //max-height: 96vh;
+    padding: $dialog-padding-vertical $dialog-padding-horizontal;
+    border-radius: 0.3rem;
+    background-color: #fff;
+    box-shadow: 0 0 4rem rgba(0, 0, 0, 0.1), 0 0 0.5rem rgba(0, 0, 0, 0.4);
+}
+
+.dialog__header {
+    @include flex(center, center);
+    margin-bottom: $dialog-padding-vertical;
+}
+
+.dialog__title {
+    font-weight: 300;
+}
+
+.dialog__body {
+    width: 100%;
+    @include flex(flex-start, flex-start, column);
+}
+
+.dialog__input-container {
+    margin-bottom: 2rem;
+}
+
+.dialog__input.input__description {
+    height: 8rem;
+
+    + .input-label {
+        top: 1.8rem;
+    }
+}
+
+.dialog__footer {
+    width: 100%;
+}
+
+.dialog__buttons {
+    width: 100%;
+    @include flex(center, center);
+}
+
+.dialog__button {
+    @include flex(center, center);
+    flex: 1;
+    padding: 1.2rem 0;
+    border: 0;
+    text-transform: uppercase;
+    transition:all 0.25s ease-in-out, background-color 0.1s ease-in-out;
+
+    &:not(:first-child) {
+        margin-left: 1rem;
+    }
+}
+
+.dialog__button--submit {
+    font-weight: 400;
+
+    &:hover {
+        flex: 2;
+    }
+}
