@@ -27,7 +27,7 @@ class BaseClass {
                 children: {
                     0: {
                         parentId: '',
-                        title: '',
+                        cardName: '',
                         description: '',
                         taskType: '',
                         taskName: '',
@@ -38,9 +38,10 @@ class BaseClass {
             dialog: {
                 title: 'Log time',
                 inputs: {
-                    names: ['task-name', 'description', 'task-type', 'time-spent'],
+                    names: ['card-name','description', 'task-name', 'task-type', 'time-spent'],
                     DOM: [],
-                }
+                },
+                buttons: {}
             }
         };
     }
@@ -120,7 +121,7 @@ class CardClass extends HTMLElement {
 
     create(parentId) {
         let newCard = Base.createElement('log-card',
-            {'class': ['column__card', 'card'], 'id': `card-${++Base.Elements.cards.count}`},
+            {'class': ['column__card', 'card'], 'id': `card-${Base.Elements.cards.count}`},
             Base.Dom(`#${parentId} .column__body`)[0]);
 
         this.addToElementsObject(parentId);
@@ -131,15 +132,9 @@ class CardClass extends HTMLElement {
     }
 
     addToElementsObject(parentId) {
-        Base.Elements.cards.children[Base.Elements.cards.count] = {
-            parentId: parentId,
-            id: Base.Elements.cards.count,
-            title: 'Nazwa karty',
-            description: 'Opis karty',
-            taskType: 'feature',
-            taskName: 'Nazwa taska',
-            timeLogged: null,
-        };
+        Base.Elements.cards.children[Base.Elements.cards.count].parentId = parentId;
+        Base.Elements.cards.children[Base.Elements.cards.count].id = Base.Elements.cards.count;
+        console.log(Base.Elements.cards);
     }
 
     createCardHeader(newCard) {
@@ -147,8 +142,8 @@ class CardClass extends HTMLElement {
             {'class': 'card__header'}, newCard);
 
         let newCardHeaderTitle = Base.createElement('span',
-            {'class': 'card__title'}, newCardHeader);
-        newCardHeaderTitle.innerText = Base.Elements.cards.children[Base.Elements.cards.count].title;
+            {'class': 'card__name'}, newCardHeader);
+        newCardHeaderTitle.innerText = Base.Elements.cards.children[Base.Elements.cards.count].cardName;
     }
 
     createCardBody(newCard) {
@@ -168,7 +163,9 @@ class CardClass extends HTMLElement {
             {'class': 'card__task'}, newCardFooter);
 
         let newCardFooterTaskIcon = Base.createElement('i',
-            {'class': ['card__status-icon', 'status-icon', 'status-icon__feature']}, newCardFooterTask);
+            {'class': ['card__status-icon', 'status-icon',
+                    `status-icon__${Base.Elements.cards.children[Base.Elements.cards.count].taskType}`]},
+            newCardFooterTask);
 
         let newCardFooterTaskName = Base.createElement('span',
             {'class': 'card__task-name'}, newCardFooterTask);
@@ -176,6 +173,18 @@ class CardClass extends HTMLElement {
 
         let newCardFooterLoggedTime = Base.createElement('span',
             {'class': 'card__logged-time'}, newCardFooter);
+        newCardFooterLoggedTime.innerText = Base.Elements.cards.children[Base.Elements.cards.count].timeLogged;
+    }
+
+    fetchDataFromDialog() {
+        Base.Elements.cards.children[++Base.Elements.cards.count] = {
+            cardName: Base.Elements.dialog.inputs.DOM[0].value,
+            description: Base.Elements.dialog.inputs.DOM[1].value,
+            taskName: Base.Elements.dialog.inputs.DOM[2].value,
+            taskType: Base.Elements.dialog.inputs.DOM[3].value,
+            timeLogged: Base.Elements.dialog.inputs.DOM[4].value,
+        };
+        console.log(Base.Elements.cards);
     }
 }
 customElements.define('log-card', CardClass);
@@ -204,7 +213,7 @@ class ColumnClass extends HTMLElement {
     }
 
     countTotalTimeInColumn(columnId) {
-        return '7h 30m';
+        return '0h';
     }
 
     create() {
@@ -321,34 +330,42 @@ class DialogClass extends HTMLElement {
         Base.class('dialog')[0].addClass('dialog--hidden');
         this.state.opened = !this.state.opened;
         this.state.openedBy = '';
+        setTimeout(() => {
+            this.dialog.parentNode.removeChild(this.dialog);
+            this.dialogOverlay.parentNode.removeChild(this.dialogOverlay);
+            this.init();
+        }, 500);
+
     }
 
     init() {
+        Base.Elements.dialog.inputs.DOM = [];
+        Base.Elements.dialog.buttons = {};
         this.state = {
             opened: false,
             openedBy: '',
         };
 
-        let dialogOverlay = Base.createElement('div',
+        this.dialogOverlay = Base.createElement('div',
             {'class': ['dialog-overlay', 'dialog-overlay--hidden']}, Base.Elements.main);
 
-        let dialog = Base.createElement('log-dialog',
-            {'class': ['dialog', 'dialog--hidden']}, dialogOverlay);
+        this.dialog = Base.createElement('log-dialog',
+            {'class': ['dialog', 'dialog--hidden']}, this.dialogOverlay);
 
-        this.createDialogContent(dialog);
+        this.createDialogContent();
         this.addListeners();
     }
 
-    createDialogContent(dialog) {
+    createDialogContent() {
         let dialogHeader = Base.createElement('div',
-            {'class': 'dialog__header'}, dialog);
+            {'class': 'dialog__header'}, this.dialog);
 
         let dialogTitle = Base.createElement('h2',
             {'class': 'dialog__title'}, dialogHeader);
         dialogTitle.innerText = 'Log Time';
 
         let dialogBody = Base.createElement('div',
-            {'class': 'dialog__body'}, dialog);
+            {'class': 'dialog__body'}, this.dialog);
         dialogTitle.innerText = 'Log Time';
 
         for (let input of Base.Elements.dialog.inputs.names) {
@@ -384,48 +401,55 @@ class DialogClass extends HTMLElement {
         }
 
         let dialogFooter = Base.createElement('div',
-            {'class': 'dialog__footer'}, dialog);
+            {'class': 'dialog__footer'}, this.dialog);
 
         let dialogButtons = Base.createElement('div',
             {'class': 'dialog__buttons'}, dialogFooter);
 
-        let dialogButtonSubmit = Base.createElement('button',
+        this.dialogButtonSubmit = Base.createElement('button',
             {'class': ['dialog__button', 'button', 'dialog__button--submit']}, dialogButtons);
-        dialogButtonSubmit.innerText = 'Submit';
+        this.dialogButtonSubmit.innerText = 'Submit';
+        Base.Elements.dialog.buttons.submit = this.dialogButtonSubmit;
 
-        let dialogButtonCancel = Base.createElement('button',
+        this.dialogButtonCancel = Base.createElement('button',
             {'class': ['dialog__button', 'button', 'dialog__button--cancel']}, dialogButtons);
-        dialogButtonCancel.innerText = 'Cancel';
+        this.dialogButtonCancel.innerText = 'Cancel';
+        Base.Elements.dialog.buttons.cancel = this.dialogButtonCancel;
     }
 
     addListeners() {
-        //@TODO: add listener for buttons to remove red warning border on input
-        Base.Dom(`.dialog__button.dialog__button--cancel`)[0].addEventListener('click', event => {
-            event.stopPropagation();
-            if (this.state.opened === true) {
-                this.close();
-            }
-        });
-        Base.Dom(`.dialog__button.dialog__button--submit`)[0].addEventListener('click', event => {
+        this.dialogButtonSubmit.addEventListener('click', event => {
             event.stopPropagation();
             if (this.state.opened === true && this.validation() === true) {
+                Card.fetchDataFromDialog();
                 Card.create(this.state.openedBy);
                 this.close();
             }
         });
-        Base.Dom(`.dialog-overlay`)[0].addEventListener('click', event => {
+        this.dialogButtonCancel.addEventListener('mousedown', event => {
             event.stopPropagation();
             if (this.state.opened === true) {
                 this.close();
             }
         });
-        Base.Dom(`.dialog`)[0].addEventListener('click', event => {
+        this.dialogOverlay.addEventListener('mousedown', event => {
             event.stopPropagation();
+            if (this.state.opened === true) {
+                this.close();
+            }
+        });
+        this.dialog.addEventListener('mousedown', event => {
+            event.stopPropagation();
+        });
+
+        Base.Elements.dialog.inputs.DOM.forEach(input => {
+            input.addEventListener('input', () => {
+                input.classList.remove('dialog__input--invalid');
+            });
         });
     }
 
     validation() {
-        console.log(Base.Elements.dialog.inputs.DOM);
         for (let input of Base.Elements.dialog.inputs.DOM) {
             if (!input.checkValidity()) {
                 input.addClass('dialog__input--invalid');
@@ -450,9 +474,6 @@ class Main {
 
     createColumns(quantity) {
         for (let i = 0; i < quantity; i++) Column.create();
-    }
-
-    createCard(parentId) {
     }
 
 }
