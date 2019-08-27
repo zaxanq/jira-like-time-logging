@@ -15,9 +15,19 @@ class BaseClass {
                         id: null,
                         dayName: '',
                         date: '',
-                        totalWorkedTime: null,
+                        totalWorkedTime: {
+                            number: 0,
+                            string: '0h'
+                        },
                         totalTime: null,
                         title: 'Worklogs',
+                    }
+                },
+                DOM: {
+                    0: {
+                        column: null,
+                        totalWorkedTime: null,
+                        progress: null,
                     }
                 },
                 dayNames: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -105,11 +115,39 @@ class BaseClass {
     }
 
     convertStringToTime(string) {
-        string = string.replace(/\s/g, '').slice(0, string.length - 2).split('h');
+        let removeLastChar = (string) => {
+            return string.slice(0, string.length - 1);
+        };
+
+        if (string.includes('h') && string.includes('m')) {
+            let stringArray;
+            if (string.includes(' ')) { // '7h 30m' or '30m 7h'
+                stringArray = string.split(' ').map(part => removeLastChar(part));
+                if (string.indexOf('h') > string.indexOf('m')) stringArray = stringArray.reverse();
+
+            } else { // '7h30m' '30m7h'
+                if (string.indexOf('h') < string.indexOf('m')) { // '7h30m'
+                    stringArray = string.split('m').join('').split('h');
+                } else { // '30m7h'
+                    stringArray = string.split('h').join('').split('m').reverse();
+                }
+            }
+            return Number(stringArray[0]) * 60 + Number(stringArray[1]);
+        } else if (!string.includes('h')) { // '30m'
+            console.log(removeLastChar(string.trim()));
+            return Number(removeLastChar(string.trim()));
+        } else if (!string.includes('m')) { // '7h'
+            console.log(Number(removeLastChar(string.trim())) * 60);
+            return Number(removeLastChar(string.trim())) * 60;
+        }
         return Number(string[0]) * 60 + Number(string[1]);
     }
 
-    convertTimeToString() {}
+    convertTimeToString(number) {
+        let hours = Math.floor(number / 60);
+        let minutes = number % 60;
+        return hours === 0 ? `${minutes}m` : minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
+    }
 }
 
 const Base = new BaseClass;
@@ -134,7 +172,6 @@ class CardClass extends HTMLElement {
     addToElementsObject(parentId) {
         Base.Elements.cards.children[Base.Elements.cards.count].parentId = parentId;
         Base.Elements.cards.children[Base.Elements.cards.count].id = Base.Elements.cards.count;
-        console.log(Base.Elements.cards);
     }
 
     createCardHeader(newCard) {
@@ -173,7 +210,8 @@ class CardClass extends HTMLElement {
 
         let newCardFooterLoggedTime = Base.createElement('span',
             {'class': 'card__logged-time'}, newCardFooter);
-        newCardFooterLoggedTime.innerText = Base.Elements.cards.children[Base.Elements.cards.count].timeLogged;
+        newCardFooterLoggedTime.innerText = Base.convertTimeToString(
+            Base.convertStringToTime(Base.Elements.cards.children[Base.Elements.cards.count].timeLogged));
     }
 
     fetchDataFromDialog() {
@@ -184,7 +222,6 @@ class CardClass extends HTMLElement {
             taskType: Base.Elements.dialog.inputs.DOM[3].value,
             timeLogged: Base.Elements.dialog.inputs.DOM[4].value,
         };
-        console.log(Base.Elements.cards);
     }
 }
 customElements.define('log-card', CardClass);
@@ -213,13 +250,16 @@ class ColumnClass extends HTMLElement {
     }
 
     countTotalTimeInColumn(columnId) {
-        return '0h';
+        return {number: 0, string: '0h'};
     }
 
     create() {
+        Base.Elements.columns.DOM[++Base.Elements.columns.count] = {};
+
         let newColumn = Base.createElement('log-column',
-            {'class': 'column', 'id': `column-${++Base.Elements.columns.count}`},
+            {'class': 'column', 'id': `column-${Base.Elements.columns.count}`},
             Base.Elements.main);
+        Base.Elements.columns.DOM[Base.Elements.columns.count].column = newColumn;
 
         this.addToElementsObject();
 
@@ -241,47 +281,52 @@ class ColumnClass extends HTMLElement {
         };
     }
 
-    setProgress () {
-
-    }
-
     createColumnHead(newColumn) {
         let newColumnHead = Base.createElement('div',
             {'class': 'column__head'}, newColumn);
+
         let newColumnHeadDetails = Base.createElement('div',
             {'class': 'column__details'}, newColumnHead);
+
         let newColumnHeadDate = Base.createElement('p', {'class': 'column__date'}, newColumnHeadDetails);
+
         let newColumnHeadDateDay = Base.createElement('span',
             {'class': 'column__date-day'}, newColumnHeadDate);
+        newColumnHeadDateDay.innerText = Base.Elements.columns.children[Base.Elements.columns.count].dayName + ' ';
+
         let newColumnHeadDateDate = Base.createElement('span',
             {'class': 'column__date-date'}, newColumnHeadDate);
-
-        newColumnHeadDateDay.innerText = Base.Elements.columns.children[Base.Elements.columns.count].dayName + ' ';
         newColumnHeadDateDate.innerText = Base.Elements.columns.children[Base.Elements.columns.count].date;
 
         let newColumnHeadHours = Base.createElement('p',
             {'class': 'column__hours'}, newColumnHeadDetails);
+
         let newColumnHeadHoursWorked = Base.createElement('span',
             {'class': 'column__hours-worked'}, newColumnHeadHours);
+        Base.Elements.columns.DOM[Base.Elements.columns.count].totalWorkedTime = newColumnHeadHoursWorked;
+        newColumnHeadHoursWorked.innerText =
+            Base.Elements.columns.children[Base.Elements.columns.count].totalWorkedTime.string;
+
         let newColumnHeadHoursOf = Base.createElement('span',
             {}, newColumnHeadHours);
+        newColumnHeadHoursOf.innerText = ' of ';
+
         let newColumnHeadHoursTotal = Base.createElement('span',
             {'class': 'column__hours-total'}, newColumnHeadHours);
-
-        newColumnHeadHoursWorked.innerText = Base.Elements.columns.children[Base.Elements.columns.count].totalWorkedTime;
-        newColumnHeadHoursOf.innerText = ' of ';
         newColumnHeadHoursTotal.innerText = Base.Elements.columns.children[Base.Elements.columns.count].totalTime;
 
         let newColumnHeadProgress = Base.createElement('div',
             {'class': 'column__progress'}, newColumnHead);
+
         let newColumnHeadProgressDone = Base.createElement('div',
             {'class': 'column__progress--done',
                 'id': `column-${Base.Elements.columns.count}__progress--done`}, newColumnHeadProgress);
+        Base.Elements.columns.DOM[Base.Elements.columns.count].progress = newColumnHeadProgressDone;
 
         let newColumnHeadTitle = Base.createElement('h2',
             {'class': 'column__title'}, newColumnHead);
-
         newColumnHeadTitle.innerText = Base.Elements.columns.children[Base.Elements.columns.count].title;
+        console.log(Base.Elements.columns.DOM[Base.Elements.columns.count]);
     }
 
     createColumnBody(newColumn) {
@@ -307,6 +352,31 @@ class ColumnClass extends HTMLElement {
         Base.Dom(`#${parentId} .buttons__add-task`)[0].addEventListener('click', function() {
             if (Dialog.open(parentId)) Card.create(parentId);
         });
+    }
+
+    getTimeLogged(time, column) {
+        time = Base.convertStringToTime(time);
+
+        Base.Elements.columns.children[column.charAt(column.length - 1)].totalWorkedTime.number += time;
+        this.updateTimeLoggedString(column.charAt(column.length - 1));
+    }
+
+    updateTimeLoggedString(columnNo) {
+        Base.Elements.columns.children[columnNo].totalWorkedTime.string =
+            Base.convertTimeToString(Base.Elements.columns.children[columnNo].totalWorkedTime.number);
+
+        this.renderWorkedTime(columnNo);
+        this.renderProgress(columnNo);
+    }
+
+    renderWorkedTime(columnNo) {
+        Base.Elements.columns.DOM[columnNo].totalWorkedTime.innerText =
+            Base.Elements.columns.children[columnNo].totalWorkedTime.string;
+    }
+
+    renderProgress(columnNo) {
+        Base.Elements.columns.DOM[columnNo].progress.setAttribute('style',
+            `width: ${Base.Elements.columns.children[columnNo].totalWorkedTime.number / Base.totalTime.number * 100}%`);
     }
 
 }
@@ -422,6 +492,8 @@ class DialogClass extends HTMLElement {
             event.stopPropagation();
             if (this.state.opened === true && this.validation() === true) {
                 Card.fetchDataFromDialog();
+                Column.getTimeLogged(Base.Elements.cards.children[Base.Elements.cards.count].timeLogged,
+                    this.state.openedBy);
                 Card.create(this.state.openedBy);
                 this.close();
             }

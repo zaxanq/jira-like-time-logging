@@ -56,6 +56,7 @@ $progress-height: 1.4rem;
   @include size(100%, $progress-height);
   margin-bottom: 1.2rem;
   border-radius: $progress-height / 2;
+  overflow: hidden;
 }
 
 .column__progress--done {
