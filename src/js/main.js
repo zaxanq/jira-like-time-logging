@@ -513,7 +513,7 @@ class DialogClass extends HTMLElement {
             }
         });
 
-        this.dialogButtonCancel.addEventListener('input', event => {
+        this.dialogButtonCancel.addEventListener('mousedown', event => {
             event.stopPropagation();
             if (this.state.opened === true) {
                 this.close();
