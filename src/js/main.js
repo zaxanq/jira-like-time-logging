@@ -1,48 +1,29 @@
 class BaseClass {
+    /* Base class containing common methods and prototype methods. */
+
     constructor() {
-        this.init();
         this.app();
+        this.init();
     }
 
     app() {
         this.totalTime = {number: 480, string: '8h'};
-        this.Elements = {
+        this.Elements = { // main object that stores most of data/DOM links.
             main: this.Dom('main.wrapper')[0],
             columns: {
                 count: 0,
                 children: {
-                    0: {
-                        id: null,
-                        dayName: '',
-                        date: '',
-                        totalWorkedTime: {
-                            number: 0,
-                            string: '0h'
-                        },
-                        totalTime: null,
-                        title: 'Worklogs',
-                    }
+                    0: {}
                 },
                 DOM: {
-                    0: {
-                        column: null,
-                        totalWorkedTime: null,
-                        progress: null,
-                    }
+                    0: {}
                 },
-                dayNames: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                dayNames: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] // displayed in Column head
             },
             cards: {
                 count: 0,
                 children: {
-                    0: {
-                        parentId: '',
-                        cardName: '',
-                        description: '',
-                        taskType: '',
-                        taskName: '',
-                        timeLogged: null,
-                    }
+                    0: {}
                 }
             },
             dialog: {
@@ -50,7 +31,7 @@ class BaseClass {
                 inputs: {
                     names: ['card-name', 'description', 'task-name', 'task-type', 'time-spent'],
                     labels: ['Card name', 'Description', 'Task name', '', 'Time spent'],
-                    DOM: [],
+                    DOM: []
                 },
                 buttons: {}
             }
@@ -60,6 +41,9 @@ class BaseClass {
                 requiredInput: 'This input is required.',
                 invalidValue: 'Invalid time value',
                 invalidTaskNameFormat: 'Invalid task name format',
+            },
+            error: {
+                invalidClassName: 'Invalid type of class name or class names container.',
             }
         }
     }
@@ -69,10 +53,10 @@ class BaseClass {
             if (typeof className === 'string') {
                 this.classList.add(className);
             } else if (typeof className === 'object') {
-                if (className.length) { //an array
+                if (className.length) { // checking if it's an array
                     className.forEach((name) => this.classList.add(name));
                 } else {
-                    console.error('Invalid type of class name or class names container.');
+                    console.error(this.message.error.invalidClassName);
                 }
             }
             return this;
@@ -82,31 +66,36 @@ class BaseClass {
             if (typeof className === 'string') {
                 this.classList.remove(className);
             } else if (typeof className === 'object') {
-                if (className.length) { //an array
+                if (className.length) { // checking if it's an array
                     className.forEach((name) => this.classList.remove(name));
                 } else {
-                    console.error('Invalid type of class name or class names container.');
+                    console.error(this.message.error.invalidClassName);
                 }
             }
             return this;
         };
-
-        this.convertStringToTime('7h 30m');
     }
 
-    Dom(selector) {
+    Dom(selector) { // shortcut method
         return document.querySelectorAll(selector);
     }
 
-    class(className) {
+    class(className) { // shortcut method
         return document.getElementsByClassName(className);
     }
 
-    id(idName) {
+    id(idName) { // shortcut method
         return document.getElementById(idName);
     }
 
     createElement(tag, options, parent, append = true) {
+        /*  Input: tag (string), options (object), parent element (Node), append (boolean).
+            Output: HTML element (Node)
+            Method creates an element with given tag, inside a given parent.
+            Append attribute decides whether the element should be added as the first or last child.
+            Options can contain class and id names,
+                i.e.: {class: 'button'} or {class: ['button', 'button-dark'], id: 'button-5'}
+         */
         let element = document.createElement(tag);
         if (options['class']) element.addClass(options['class']);
         if (options['id']) element.id = options['id'];
@@ -118,11 +107,21 @@ class BaseClass {
     }
 
     fixDate(number) {
+        /*  Method adds a '0' to the beginning of number if it's smaller than 10. It return it as a string.
+            If no '0' was added, method returns inputted number (as a number).
+         */
         if (number < 10) return `0${number}`;
         return number;
     }
 
     checkTime(string) {
+        /*  Input: string
+            Output: array (containing 2 elements)
+            Method takes a string and looks for a RegExp matches in order to get an array of time values.
+            Next a for loop will get first appearance of "__h" and "__m" (where __ = any number) and assign it to
+                variables 'hours' and 'minutes'.
+            Finally, these 2 variables are returned in an array.
+         */
         let regExp = /([0-9]{1,2}h|[0-9]{1,3}m)/g;
         let timeValues = string.match(regExp);
         let hours = '',
@@ -138,21 +137,29 @@ class BaseClass {
     }
 
     convertStringToTime(string) {
-        let removeLastChar = (string) => {
-            return string.slice(0, string.length - 1);
-        };
+        /*  Input: string
+            Output: number
+            Method gets a string with time value (i.e: "7h30m", "5h" "10m" "20m 4h", "1h 10m").
+            With a help of a Base.checkTime() method it returns a number of minutes.
+         */
+        let removeLastChar = (string) => string.slice(0, string.length - 1); // removes a (last) letter from a time value
 
         let [hours, minutes] = this.checkTime(string);
         return Number(removeLastChar(hours)) * 60 + Number(removeLastChar(minutes));
     }
 
     convertTimeToString(number) {
+        /*  Input: number
+            Output: string
+            Method gets a number of minutes and returns it as a string in given format: "HHh MMm"
+                where 'HH' is a number of hours and 'MM' is a number of minutes.
+            If number of hours or minutes is equal to 0 it is not displayed (i.e. "0h 30m" -> "30m", "5h 0m" -> "5h")
+         */
         let hours = Math.floor(number / 60);
         let minutes = number % 60;
         return hours === 0 ? `${minutes}m` : minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
     }
 }
-
 const Base = new BaseClass;
 
 class CardClass extends HTMLElement {
@@ -160,24 +167,55 @@ class CardClass extends HTMLElement {
         super();
     }
 
+    fetchDataFromDialog() {
+        /*  Input: -
+            Output: -
+            This method is used to gather all data inserted into Dialog inputs into Elements.cards object.
+            Elements.cards object will later deliver this data (in Card.create() method) to fill the card with info.
+         */
+        Base.Elements.cards.children[++Base.Elements.cards.count] = {
+            cardName: Base.Elements.dialog.inputs.DOM[0].value,
+            description: Base.Elements.dialog.inputs.DOM[1].value,
+            taskName: Base.Elements.dialog.inputs.DOM[2].value,
+            taskType: Base.Elements.dialog.inputs.DOM[3].value,
+            timeLogged: Dialog.DialogInputTimeSpent,
+        };
+    }
+
     create(parentId) {
+        /*  Input: id of a column in which the Card is supposed to be created in (string)
+            Output: Card element (Node)
+            Method creates a <log-card></log-card> element (a "Card"), that displays a task.
+            The Card is created only after Dialog form is submitted and it is validated as correct.
+            This method uses data from Elements.cards.
+         */
+            // Card element
         let newCard = Base.createElement('log-card',
             {'class': ['column__card', 'card'], 'id': `card-${Base.Elements.cards.count}`},
             Base.Dom(`#${parentId} .column__body`)[0]);
 
-        this.addToElementsObject(parentId);
+        this.addToElementsObject(parentId); // new card will be added to Base.Elements.cards object.
 
         this.createCardHeader(newCard);
         this.createCardBody(newCard);
         this.createCardFooter(newCard);
+        return newCard;
     }
 
     addToElementsObject(parentId) {
+        /*  Input: Input: id of a column in which the Card is supposed to be created in (string)
+            Output: -
+            Method adds parent column id and card id (card number) to Elements object.
+         */
         Base.Elements.cards.children[Base.Elements.cards.count].parentId = parentId;
         Base.Elements.cards.children[Base.Elements.cards.count].id = Base.Elements.cards.count;
     }
 
     createCardHeader(newCard) {
+        /*  Input: Card element (Node)
+            Output: -
+            Creates a Card header and everything that it should contain (card name).
+         */
         let newCardHeader = Base.createElement('div',
             {'class': 'card__header'}, newCard);
 
@@ -187,6 +225,10 @@ class CardClass extends HTMLElement {
     }
 
     createCardBody(newCard) {
+        /*  Input: Card element (Node)
+            Output: -
+            Creates a Card body and everything that it should contain (task description).
+         */
         let newCardBody = Base.createElement('div',
             {'class': 'card__body'}, newCard);
 
@@ -196,6 +238,10 @@ class CardClass extends HTMLElement {
     }
 
     createCardFooter(newCard) {
+        /*  Input: Card element (Node)
+            Output: -
+            Creates a Card fppter and everything that it should contain (task type, task name and logged tie).
+         */
         let newCardFooter = Base.createElement('div',
             {'class': 'card__footer'}, newCard);
 
@@ -216,16 +262,6 @@ class CardClass extends HTMLElement {
         newCardFooterLoggedTime.innerText = Base.convertTimeToString(
             Base.convertStringToTime(Base.Elements.cards.children[Base.Elements.cards.count].timeLogged));
     }
-
-    fetchDataFromDialog() {
-        Base.Elements.cards.children[++Base.Elements.cards.count] = {
-            cardName: Base.Elements.dialog.inputs.DOM[0].value,
-            description: Base.Elements.dialog.inputs.DOM[1].value,
-            taskName: Base.Elements.dialog.inputs.DOM[2].value,
-            taskType: Base.Elements.dialog.inputs.DOM[3].value,
-            timeLogged: Dialog.DialogInputTimeSpent,
-        };
-    }
 }
 customElements.define('log-card', CardClass);
 let Card = new CardClass;
@@ -237,54 +273,69 @@ class ColumnClass extends HTMLElement {
     }
 
     setWeek() {
+        /*  Input: -
+            Output: a 7-element array
+            Method takes current date and day of the week in order to return an array with all days of the current week.
+         */
         let week = [];
         this.now = new Date;
 
-        for (let i = 1; i < this.now.getDay(); i++) {
+        for (let i = 1; i < this.now.getDay(); i++) { // add days until today
            week.push(this.now.getDate() - this.now.getDay() + i);
         }
 
-        if (week.length === 0) week.push(this.now.getDate());
-        for (let i = week.length; i < 7; i++) {
+        if (week.length === 0) week.push(this.now.getDate()); // if week is empty then it's the first day of the week
+
+        for (let i = week.length; i < 7; i++) { // add future days until a full week is included
             week.push((week[week.length - 1]%31) + 1);
         }
 
         return week;
     }
 
-    countTotalTimeInColumn(columnId) {
-        return {number: 0, string: '0h'};
-    }
-
     create() {
+        /*  Input: -
+            Output: -
+            Method creates a <log-column></log-column> Column and all that should be contained in it.
+         */
+            // create new sub object
         Base.Elements.columns.DOM[++Base.Elements.columns.count] = {};
 
+            // a Column element.
         let newColumn = Base.createElement('log-column',
             {'class': 'column', 'id': `column-${Base.Elements.columns.count}`},
             Base.Elements.main);
         Base.Elements.columns.DOM[Base.Elements.columns.count].column = newColumn;
 
-        this.addToElementsObject();
+        this.addToElementsObject(); // new card will be added to Base.Elements.columns object.
 
         this.createColumnHead(newColumn);
         this.createColumnBody(newColumn);
         this.createColumnFooter(newColumn);
 
-        this.addButtonListener(newColumn.id);
+        this.addButtonListener(newColumn.id);  // add EventListeners for Column buttons
     }
 
     addToElementsObject() {
+        /*  Input: -
+            Output: -
+            Creates a "starter" Elements.columns sub object containing starting data. Some of it will later be updated.
+         */
         Base.Elements.columns.children[Base.Elements.columns.count] = {
             id: Base.Elements.columns.count,
             dayName: Base.Elements.columns.dayNames[Base.Elements.columns.count - 1],
             date: this.week[Base.Elements.columns.count - 1] + '.' + Base.fixDate(this.now.getMonth() + 1),
-            totalWorkedTime: this.countTotalTimeInColumn(Base.Elements.columns.count),
+            totalWorkedTime: {number: 0, string: '0h'},
             totalTime: '8h',
             title: 'Worklogs',
         };
     }
 
     createColumnHead(newColumn) {
+        /*  Input: Column element (Node)
+            Output: -
+            Creates a Column head and everything that it should contain (date, logged hours, total hours, progress bar).
+         */
         let newColumnHead = Base.createElement('div',
             {'class': 'column__head'}, newColumn);
 
@@ -332,11 +383,19 @@ class ColumnClass extends HTMLElement {
     }
 
     createColumnBody(newColumn) {
+        /*  Input: Column element (Node)
+            Output: -
+            Creates a Column body, which will be a container for Cards.
+         */
         let newColumnBody = Base.createElement('idv',
             {'class': 'column__body'}, newColumn);
     }
 
     createColumnFooter(newColumn) {
+        /*  Input: Column element (Node)
+            Output: -
+            Creates a Column footer and Column buttons.
+         */
         let newColumnFooter = Base.createElement('div',
             {'class': 'column__footer'}, newColumn);
 
@@ -351,35 +410,49 @@ class ColumnClass extends HTMLElement {
     }
 
     addButtonListener(parentId) {
+        /*  Input: Column id (string)
+            Output: -
+            Adds an EventListener to Column buttons.
+            Add-task button will open a Dialog and if the Dialog.open() return true, it will create a Card.
+         */
         Base.Dom(`#${parentId} .buttons__add-task`)[0].addEventListener('click', function() {
             if (Dialog.open(parentId)) Card.create(parentId);
         });
     }
 
-    getTimeLogged(time, column) {
+    getTimeLogged(time, columnId) {
+        /*  Input: time (string), columnId (string)
+            Output: -
+            Method takes a time value and converts it to a number, which is later added to total worked time
+                in Elements.columns object. Then new total worked time number value is taken to update the
+                total worked time string value.
+            With both these values renderWorkedTime() and renderProgress() can be now executed.
+         */
+        let columnNo = columnId.charAt(columnId.length - 1);
+
         time = Base.convertStringToTime(time);
-        console.log('time:', time);
 
-        Base.Elements.columns.children[column.charAt(column.length - 1)].totalWorkedTime.number += time;
-        this.updateTimeLoggedString(column.charAt(column.length - 1));
-    }
-
-    updateTimeLoggedString(columnNo) {
+        Base.Elements.columns.children[columnNo].totalWorkedTime.number += time;
         Base.Elements.columns.children[columnNo].totalWorkedTime.string =
             Base.convertTimeToString(Base.Elements.columns.children[columnNo].totalWorkedTime.number);
-
-        console.log(Base.Elements.columns.children[columnNo].totalWorkedTime.string);
-        console.log(Base.Elements.columns.children[columnNo].totalWorkedTime.number);
         this.renderWorkedTime(columnNo);
         this.renderProgress(columnNo);
     }
 
     renderWorkedTime(columnNo) {
+        /*  Input: columnNo (string with a digit)
+            Output: -
+            Updates total worked time in a Column header with new (updated) value from Elements.columns object.
+         */
         Base.Elements.columns.DOM[columnNo].totalWorkedTime.innerText =
             Base.Elements.columns.children[columnNo].totalWorkedTime.string;
     }
 
     renderProgress(columnNo) {
+        /*  Input: columnNo (string with a digit)
+            Output: -
+            Updates inline css width of progress bar(--done) based on new (update) value from Elements.columns object.
+         */
         Base.Elements.columns.DOM[columnNo].progress.setAttribute('style',
             `width: ${Base.Elements.columns.children[columnNo].totalWorkedTime.number / Base.totalTime.number * 100}%`);
     }
