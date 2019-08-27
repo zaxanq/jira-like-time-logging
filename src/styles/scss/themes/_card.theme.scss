@@ -1,16 +1,16 @@
 @mixin card-theme($main, $dark, $accents, $error) {
   background-color: map-get($main, 50);
-  border-color: map-get($main, 800);
+  border-color: map-get($main, 600);
 
   .card__name {
-    color: map-get($accents, 1000);
+    color: map-get($accents, 900);
   }
 
   .card__description {
-    color: rgba(map-get($dark, 50), 0.75);
+    color: rgba(map-get($dark, 50), 0.85);
   }
 
   .card__logged-time {
-    color: map-get($accents, 500);
+    color: map-get($accents, 400);
   }
 }

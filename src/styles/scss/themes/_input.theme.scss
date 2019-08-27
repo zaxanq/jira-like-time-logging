@@ -1,6 +1,6 @@
 @mixin input($main, $dark, $accents, $error) {
     & {
-        border-color: map-get($main, 1500);
+        border-color: map-get($main, 800);
     }
 
     &-label {
