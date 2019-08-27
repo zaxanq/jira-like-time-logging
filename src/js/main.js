@@ -48,12 +48,20 @@ class BaseClass {
             dialog: {
                 title: 'Log time',
                 inputs: {
-                    names: ['card-name','description', 'task-name', 'task-type', 'time-spent'],
+                    names: ['card-name', 'description', 'task-name', 'task-type', 'time-spent'],
+                    labels: ['Card name', 'Description', 'Task name', '', 'Time spent'],
                     DOM: [],
                 },
                 buttons: {}
             }
         };
+        this.message = {
+            warning: {
+                requiredInput: 'This input is required.',
+                invalidValue: 'Invalid time value',
+                invalidTaskNameFormat: 'Invalid task name format',
+            }
+        }
     }
 
     init() {
@@ -114,33 +122,28 @@ class BaseClass {
         return number;
     }
 
+    checkTime(string) {
+        let regExp = /([0-9]{1,2}h|[0-9]{1,3}m)/g;
+        let timeValues = string.match(regExp);
+        let hours = '',
+            minutes = '';
+
+        for (let i = 0; i < timeValues.length; i++) {
+            if (hours && minutes) break;
+            if (timeValues[i].includes('h') && !hours) hours = timeValues[i];
+            else if (timeValues[i].includes('m') && !minutes) minutes = timeValues[i];
+        }
+
+        return [hours, minutes];
+    }
+
     convertStringToTime(string) {
         let removeLastChar = (string) => {
             return string.slice(0, string.length - 1);
         };
 
-        if (string.includes('h') && string.includes('m')) {
-            let stringArray;
-            if (string.includes(' ')) { // '7h 30m' or '30m 7h'
-                stringArray = string.split(' ').map(part => removeLastChar(part));
-                if (string.indexOf('h') > string.indexOf('m')) stringArray = stringArray.reverse();
-
-            } else { // '7h30m' '30m7h'
-                if (string.indexOf('h') < string.indexOf('m')) { // '7h30m'
-                    stringArray = string.split('m').join('').split('h');
-                } else { // '30m7h'
-                    stringArray = string.split('h').join('').split('m').reverse();
-                }
-            }
-            return Number(stringArray[0]) * 60 + Number(stringArray[1]);
-        } else if (!string.includes('h')) { // '30m'
-            console.log(removeLastChar(string.trim()));
-            return Number(removeLastChar(string.trim()));
-        } else if (!string.includes('m')) { // '7h'
-            console.log(Number(removeLastChar(string.trim())) * 60);
-            return Number(removeLastChar(string.trim())) * 60;
-        }
-        return Number(string[0]) * 60 + Number(string[1]);
+        let [hours, minutes] = this.checkTime(string);
+        return Number(removeLastChar(hours)) * 60 + Number(removeLastChar(minutes));
     }
 
     convertTimeToString(number) {
@@ -220,7 +223,7 @@ class CardClass extends HTMLElement {
             description: Base.Elements.dialog.inputs.DOM[1].value,
             taskName: Base.Elements.dialog.inputs.DOM[2].value,
             taskType: Base.Elements.dialog.inputs.DOM[3].value,
-            timeLogged: Base.Elements.dialog.inputs.DOM[4].value,
+            timeLogged: Dialog.DialogInputTimeSpent,
         };
     }
 }
@@ -326,7 +329,6 @@ class ColumnClass extends HTMLElement {
         let newColumnHeadTitle = Base.createElement('h2',
             {'class': 'column__title'}, newColumnHead);
         newColumnHeadTitle.innerText = Base.Elements.columns.children[Base.Elements.columns.count].title;
-        console.log(Base.Elements.columns.DOM[Base.Elements.columns.count]);
     }
 
     createColumnBody(newColumn) {
@@ -356,6 +358,7 @@ class ColumnClass extends HTMLElement {
 
     getTimeLogged(time, column) {
         time = Base.convertStringToTime(time);
+        console.log('time:', time);
 
         Base.Elements.columns.children[column.charAt(column.length - 1)].totalWorkedTime.number += time;
         this.updateTimeLoggedString(column.charAt(column.length - 1));
@@ -365,6 +368,8 @@ class ColumnClass extends HTMLElement {
         Base.Elements.columns.children[columnNo].totalWorkedTime.string =
             Base.convertTimeToString(Base.Elements.columns.children[columnNo].totalWorkedTime.number);
 
+        console.log(Base.Elements.columns.children[columnNo].totalWorkedTime.string);
+        console.log(Base.Elements.columns.children[columnNo].totalWorkedTime.number);
         this.renderWorkedTime(columnNo);
         this.renderProgress(columnNo);
     }
@@ -422,63 +427,71 @@ class DialogClass extends HTMLElement {
         this.dialog = Base.createElement('log-dialog',
             {'class': ['dialog', 'dialog--hidden']}, this.dialogOverlay);
 
+        this.dialogForm = Base.createElement('form',
+            {}, this.dialog);
+
         this.createDialogContent();
         this.addListeners();
     }
 
     createDialogContent() {
         let dialogHeader = Base.createElement('div',
-            {'class': 'dialog__header'}, this.dialog);
+            {'class': 'dialog__header'}, this.dialogForm);
 
         let dialogTitle = Base.createElement('h2',
             {'class': 'dialog__title'}, dialogHeader);
         dialogTitle.innerText = 'Log Time';
 
         let dialogBody = Base.createElement('div',
-            {'class': 'dialog__body'}, this.dialog);
+            {'class': 'dialog__body'}, this.dialogForm);
         dialogTitle.innerText = 'Log Time';
 
-        for (let input of Base.Elements.dialog.inputs.names) {
+        let Inputs = Base.Elements.dialog.inputs;
+        for (let i = 0; i < Inputs.names.length; i++) {
             let dialogInputContainer = Base.createElement('div',
-                {'class': ['dialog__input-container', 'input-container', `input-container__${input}`]}, dialogBody);
+                {'class': ['dialog__input-container', 'input-container', `input-container__${Inputs.names[i]}`]}, dialogBody);
             let dialogInput;
-            if (input === 'description') {
+            if (Inputs.names[i] === 'description') {
                 dialogInput = Base.createElement('textarea',
-                    {'class': ['dialog__input', 'input', `input__${input}`]}, dialogInputContainer);
-            } else if (input === 'task-type') {
+                    {'class': ['dialog__input', 'input', `input__${Inputs.names[i]}`]}, dialogInputContainer);
+            } else if (Inputs.names[i] === 'task-type') {
                 dialogInput = Base.createElement('select',
-                    {'class': ['dialog__input', 'input', 'select', `input__${input}`]}, dialogInputContainer);
+                    {'class': ['dialog__input', 'input', 'select', `input__${Inputs.names[i]}`]}, dialogInputContainer);
 
                 for (let type of ['feature', 'bug', 'urgent']) {
                     let dialogInputOption = Base.createElement('option',
-                        {'class': ['dialog__input--option', 'select__option', `input__${input}`]}, dialogInput);
+                        {'class': ['dialog__input--option', 'select__option', `input__${Inputs.names[i]}`]}, dialogInput);
                     dialogInputOption.innerText = type;
                 }
-                dialogInput.required = true;
             } else {
                 dialogInput = Base.createElement('input',
-                    {'class': ['dialog__input', 'input', `input__${input}`]}, dialogInputContainer);
+                    {'class': ['dialog__input', 'input', `input__${Inputs.names[i]}`]}, dialogInputContainer);
                 dialogInput.type = 'text';
-                dialogInput.required = true;
             }
             Base.Elements.dialog.inputs.DOM.push(dialogInput);
-            let dialogInputLabel = Base.createElement('label',
-                {'class': ['dialog__input-label', 'input-label', `input-label__${input}`]}, dialogInputContainer);
 
-            dialogInput.name = `input__${input}`;
-            dialogInputLabel.innerText = input;
+            let dialogInputLabel = Base.createElement('label',
+                {'class': ['dialog__input-label', 'input-label', `input-label__${Inputs.names[i]}`]}, dialogInputContainer);
+
+            let dialogInputWarningContainer = Base.createElement('span',
+                {'class': ['dialog__input-warning', 'input-warning']}, dialogInputContainer);
+
+            dialogInput.name = `input__${Inputs.names[i]}`;
+            dialogInput.placeholder = ' ';
+            dialogInputLabel.innerText = Inputs.labels[i];
             dialogInput.minLength = 1;
         }
 
         let dialogFooter = Base.createElement('div',
-            {'class': 'dialog__footer'}, this.dialog);
+            {'class': 'dialog__footer'}, this.dialogForm);
 
         let dialogButtons = Base.createElement('div',
             {'class': 'dialog__buttons'}, dialogFooter);
 
-        this.dialogButtonSubmit = Base.createElement('button',
+        this.dialogButtonSubmit = Base.createElement('input',
             {'class': ['dialog__button', 'button', 'dialog__button--submit']}, dialogButtons);
         this.dialogButtonSubmit.innerText = 'Submit';
+        this.dialogButtonSubmit.type = 'submit';
         Base.Elements.dialog.buttons.submit = this.dialogButtonSubmit;
 
         this.dialogButtonCancel = Base.createElement('button',
@@ -488,8 +501,9 @@ class DialogClass extends HTMLElement {
     }
 
     addListeners() {
-        this.dialogButtonSubmit.addEventListener('click', event => {
+        this.dialogForm.addEventListener('submit', event => {
             event.stopPropagation();
+            event.preventDefault();
             if (this.state.opened === true && this.validation() === true) {
                 Card.fetchDataFromDialog();
                 Column.getTimeLogged(Base.Elements.cards.children[Base.Elements.cards.count].timeLogged,
@@ -498,7 +512,8 @@ class DialogClass extends HTMLElement {
                 this.close();
             }
         });
-        this.dialogButtonCancel.addEventListener('mousedown', event => {
+
+        this.dialogButtonCancel.addEventListener('input', event => {
             event.stopPropagation();
             if (this.state.opened === true) {
                 this.close();
@@ -516,19 +531,65 @@ class DialogClass extends HTMLElement {
 
         Base.Elements.dialog.inputs.DOM.forEach(input => {
             input.addEventListener('input', () => {
-                input.classList.remove('dialog__input--invalid');
+                this.clearInvalidInputState(input);
             });
         });
     }
 
+    clearInvalidInputState(input) {
+        input.classList.remove('dialog__input--invalid');
+        input.parentNode.lastElementChild.innerText = '';
+    }
+
+    addInvalidInputState(input, state) {
+        input.addClass('dialog__input--invalid');
+        input.parentNode.lastElementChild.innerText = Base.message.warning[state];
+    }
+
     validation() {
         for (let input of Base.Elements.dialog.inputs.DOM) {
-            if (!input.checkValidity()) {
-                input.addClass('dialog__input--invalid');
+            if (!this.checkInput(input).result) {
+                this.addInvalidInputState(input, this.checkInput(input).reason);
                 return false;
             }
         }
         return true;
+    }
+
+    checkInput(input) {
+        if (!input.value && input.name !== 'input__description') return {result: false, reason: 'requiredInput'};
+        else if (input.name === 'input__task-name') return this.checkInputTaskName();
+        else if (input.name === 'input__time-spent') return this.checkInputTimeSpent();
+        return {result: true, reason: ''}
+    }
+
+    checkInputTaskName() {
+        let regExp = /^([a-zA-Z]{3}-[0-9]*)$/g;
+
+        this.DialogInputTaskName = Base.Elements.dialog.inputs.DOM[2].value.match(regExp);
+
+        if (this.DialogInputTaskName) return {result: true, reason: ''};
+        return {result: false, reason: 'invalidTaskNameFormat'};
+    }
+
+    checkInputTimeSpent() {
+        let regExp = /([0-9]{1,2}h|[0-9]{1,3}m)/g;
+
+        // get all data that looks like time ("30m", "5h", "4h20m", "5h 50m", "50m1h", "40m 4h"
+        this.DialogInputTimeSpent = Base.Elements.dialog.inputs.DOM[4].value.match(regExp);
+
+        if (this.DialogInputTimeSpent) { // if such time value exists
+            this.DialogInputTimeSpent = this.DialogInputTimeSpent.filter(
+                (value) => Base.convertStringToTime(value) > 0); // filter out everything "bigger" than "0m" or "0h"
+                // check it again and return first hour value ("__h") and first minute value ("__m")
+                //  Right now this.DailogInputTimeSpent is an array of all time values. We need to join it before
+                // use as a parameter of Base.checkTime().
+                //  The Base.checkTime() will return pair of [hours,minutes], so we join it back into string.
+            this.DialogInputTimeSpent = Base.checkTime(this.DialogInputTimeSpent.join('')).join('');
+
+            return {result: true, reason: ''};
+        }
+        return {result: false, reason: 'invalidValue'};
     }
 }
 customElements.define('log-dialog', DialogClass);

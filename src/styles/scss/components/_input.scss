@@ -14,6 +14,14 @@ $input-padding-horizontal: 2.8rem;
     @include flex(flex-start, center);
 }
 
+.input-warning {
+    $input-warning-font-size: 1.3rem;
+    position: absolute;
+    font-size: $input-warning-font-size;
+    bottom: -$input-warning-font-size - 0.2rem;
+    left: 1rem;
+}
+
 .input {
     width: 100%;
     padding: $input-padding-vertical $input-padding-horizontal;
@@ -22,13 +30,14 @@ $input-padding-horizontal: 2.8rem;
 
     &:active,
     &:focus,
-    &:valid {
+    &:not(:placeholder-shown) {
         & + .input-label {
             margin-left: $input-padding-horizontal / 4;
             margin-top: -$input-padding-vertical;
             font-size: 1.2rem;
         }
     }
+
 }
 
 .input-label {
