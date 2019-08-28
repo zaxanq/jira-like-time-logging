@@ -467,6 +467,12 @@ class DialogClass extends HTMLElement {
     }
 
     open(columnId) {
+        /*  Input: columnId (string)
+            Output: -
+            This method shows the Dialog overlay (dark transparent div between app and dialog) and the Dialog itself.
+            There is a small security measure in form of a state that changes when Dialog is opened correctly
+                so that it will not work if Dialog is shown with a help of Dev Tools.
+         */
         Base.class('dialog-overlay')[0].removeClass('dialog-overlay--hidden');
         Base.class('dialog')[0].removeClass('dialog--hidden');
         this.state.opened = !this.state.opened;
@@ -474,19 +480,26 @@ class DialogClass extends HTMLElement {
     }
 
     close() {
+        /*  Input: -
+            Output: -
+            Method closes Dialog and after a small timeout it removes any values from the Dialog.
+         */
         Base.class('dialog-overlay')[0].addClass('dialog-overlay--hidden');
         Base.class('dialog')[0].addClass('dialog--hidden');
         this.state.opened = !this.state.opened;
         this.state.openedBy = '';
         setTimeout(() => {
-            this.dialog.parentNode.removeChild(this.dialog);
-            this.dialogOverlay.parentNode.removeChild(this.dialogOverlay);
-            this.init();
-        }, 500);
+            Base.Elements.dialog.inputs.DOM.forEach((input) => {input.value = null});
+        }, 250);
 
     }
 
     init() {
+        /*  Input: -
+            Output: -
+            Initialization method. Creates DOM array and buttons object in Elements.dialog object.
+            It also creates the Dialog overlay and Dialog component and executes creation of Dialog content.
+         */
         Base.Elements.dialog.inputs.DOM = [];
         Base.Elements.dialog.buttons = {};
         this.state = {
@@ -508,6 +521,10 @@ class DialogClass extends HTMLElement {
     }
 
     createDialogContent() {
+        /*  Input: -
+            Output: -
+            This method creates Dialog content and inputs.
+         */
         let dialogHeader = Base.createElement('div',
             {'class': 'dialog__header'}, this.dialogForm);
 
@@ -574,6 +591,10 @@ class DialogClass extends HTMLElement {
     }
 
     addListeners() {
+        /*  Input: -
+            Output: -
+            Method adds EventListeners to Dialog Form, Cancel button, inputs and Dialog overlay.
+         */
         this.dialogForm.addEventListener('submit', event => {
             event.stopPropagation();
             event.preventDefault();
@@ -610,16 +631,32 @@ class DialogClass extends HTMLElement {
     }
 
     clearInvalidInputState(input) {
+        /*  Input: input (Node)
+            Output: -
+            Removes class marking the input as invalid and removes the warning below this input.
+            This method is executed when user inputs any value into the input.
+         */
         input.classList.remove('dialog__input--invalid');
         input.parentNode.lastElementChild.innerText = '';
     }
 
     addInvalidInputState(input, state) {
+        /*  Input: input (Node), state (string)
+            Output: -
+            Adds a class marking the input as invalid and adds a warning below this input depending on state.
+            This method is executed when validation returns false for the input.
+         */
         input.addClass('dialog__input--invalid');
         input.parentNode.lastElementChild.innerText = Base.message.warning[state];
     }
 
     validation() {
+        /*  Input: -
+            Output: true/false
+            Checks every Dialog input value in order to validate it. If the result of checkInput() method is a false
+                addInvalidInputState() is executed to mark the input as invalid.
+            This method is executed when Dialog Form is submitted.
+         */
         for (let input of Base.Elements.dialog.inputs.DOM) {
             if (!this.checkInput(input).result) {
                 this.addInvalidInputState(input, this.checkInput(input).reason);
@@ -630,6 +667,14 @@ class DialogClass extends HTMLElement {
     }
 
     checkInput(input) {
+        /*  Input: input (Node)
+            Output: object {result: <boolean>, reason: <string>}
+            This method checks generic input validation, each input except the Description is technically required.
+            Due to default HTML form validation the required attribute is missing from inputs and instead
+                they are validated with this method. If the input is empty, this method returns false.
+            Then if the fields are not empty and have any further requirements, method executes specific methods
+                to check these specific inputs.
+         */
         if (!input.value && input.name !== 'input__description') return {result: false, reason: 'requiredInput'};
         else if (input.name === 'input__task-name') return this.checkInputTaskName();
         else if (input.name === 'input__time-spent') return this.checkInputTimeSpent();
@@ -637,6 +682,10 @@ class DialogClass extends HTMLElement {
     }
 
     checkInputTaskName() {
+        /*  Input: -
+            Output: object {result: <boolean>, reason: <string>}
+            Checks if Dialog TaskName input contains value in format XXX-YYY.. where X is a letter and Y is a digit.
+         */
         let regExp = /^([a-zA-Z]{3}-[0-9]*)$/g;
 
         this.DialogInputTaskName = Base.Elements.dialog.inputs.DOM[2].value.match(regExp);
@@ -646,23 +695,24 @@ class DialogClass extends HTMLElement {
     }
 
     checkInputTimeSpent() {
+        /*  Input: -
+            Output: object {result: <boolean>, reason: <string>}
+            Checks if Dialog TimeSpent input contains valid time values.
+         */
         let regExp = /([0-9]{1,2}h|[0-9]{1,3}m)/g;
 
-        // get all data that looks like time ("30m", "5h", "4h20m", "5h 50m", "50m1h", "40m 4h"
+        // get all time values (i.e "30m", "5h", "4h20m", "5h 50m", "50m1h", "40m 4h")
         this.DialogInputTimeSpent = Base.Elements.dialog.inputs.DOM[4].value.match(regExp);
 
         if (this.DialogInputTimeSpent) { // if such time value exists
             this.DialogInputTimeSpent = this.DialogInputTimeSpent.filter(
                 (value) => Base.convertStringToTime(value) > 0); // filter out everything "bigger" than "0m" or "0h"
-                // check it again and return first hour value ("__h") and first minute value ("__m")
-                //  Right now this.DailogInputTimeSpent is an array of all time values. We need to join it before
-                // use as a parameter of Base.checkTime().
-                //  The Base.checkTime() will return pair of [hours,minutes], so we join it back into string.
-            this.DialogInputTimeSpent = Base.checkTime(this.DialogInputTimeSpent.join('')).join('');
 
+                // execute checkTime() to get first hours and minutes values and then join it into a string
+            this.DialogInputTimeSpent = Base.checkTime(this.DialogInputTimeSpent.join('')).join('');
             return {result: true, reason: ''};
         }
-        return {result: false, reason: 'invalidValue'};
+        return {result: false, reason: 'invalidValue'}; // if no valid time values were given
     }
 }
 customElements.define('log-dialog', DialogClass);
@@ -670,12 +720,12 @@ let Dialog = new DialogClass;
 
 class Main {
     constructor() {
-        Base.init();
+         // it's important to invoke Dialog.init() here
         Dialog.init();
     }
 
-    init() {
-        this.createColumns(5);
+    init(columnQuantity) {
+        this.createColumns(columnQuantity);
     }
 
     createColumns(quantity) {
@@ -684,4 +734,4 @@ class Main {
 
 }
 
-(new Main()).init();
+(new Main()).init(5);
