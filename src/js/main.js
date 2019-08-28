@@ -269,12 +269,11 @@ let Card = new CardClass;
 class ColumnClass extends HTMLElement {
     constructor() {
         super();
-        this.week = this.setWeek();
     }
 
-    setWeek() {
-        /*  Input: -
-            Output: a 7-element array
+    setWeek(quantity) {
+        /*  Input: quantity (number)
+            Output: an array of quantity length
             Method takes current date and day of the week in order to return an array with all days of the current week.
          */
         let week = [];
@@ -286,18 +285,21 @@ class ColumnClass extends HTMLElement {
 
         if (week.length === 0) week.push(this.now.getDate()); // if week is empty then it's the first day of the week
 
-        for (let i = week.length; i < 7; i++) { // add future days until a full week is included
+        for (let i = week.length; i < quantity; i++) { // add future days until a full week is included
             week.push((week[week.length - 1]%31) + 1);
         }
 
         return week;
     }
 
-    create() {
-        /*  Input: -
+    create(quantity) {
+        /*  Input: quantity (number)
             Output: -
             Method creates a <log-column></log-column> Column and all that should be contained in it.
          */
+            // at first create() execution execute setWeek()
+        if (!this.week) this.week = this.setWeek(quantity);
+
             // create new sub object
         Base.Elements.columns.DOM[++Base.Elements.columns.count] = {};
 
@@ -323,7 +325,7 @@ class ColumnClass extends HTMLElement {
          */
         Base.Elements.columns.children[Base.Elements.columns.count] = {
             id: Base.Elements.columns.count,
-            dayName: Base.Elements.columns.dayNames[Base.Elements.columns.count - 1],
+            dayName: Base.Elements.columns.dayNames[(Base.Elements.columns.count - 1) % 7],
             date: this.week[Base.Elements.columns.count - 1] + '.' + Base.fixDate(this.now.getMonth() + 1),
             totalWorkedTime: {number: 0, string: '0h'},
             totalTime: '8h',
@@ -387,7 +389,7 @@ class ColumnClass extends HTMLElement {
             Output: -
             Creates a Column body, which will be a container for Cards.
          */
-        let newColumnBody = Base.createElement('idv',
+        let newColumnBody = Base.createElement('div',
             {'class': 'column__body'}, newColumn);
     }
 
@@ -724,14 +726,14 @@ class Main {
         Dialog.init();
     }
 
-    init(columnQuantity) {
+    init(columnQuantity = 5) {
         this.createColumns(columnQuantity);
     }
 
     createColumns(quantity) {
-        for (let i = 0; i < quantity; i++) Column.create();
+        for (let i = 0; i < quantity; i++) Column.create(quantity);
     }
 
 }
 
-(new Main()).init(5);
+(new Main()).init();
