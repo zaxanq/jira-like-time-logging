@@ -276,17 +276,39 @@ class ColumnClass extends HTMLElement {
             Output: an array of quantity length
             Method takes current date and day of the week in order to return an array with all days of the current week.
          */
+
+        const getDaysInMonth = (month, year) => {
+            let date = new Date(Date.UTC(year, month, 1));
+            let days = [];
+            while (date.getMonth() === month) {
+                days.push(new Date(date).getDate());
+                date.setDate(date.getDate() + 1);
+            }
+            return days;
+        };
+
         let week = [];
-        this.now = new Date;
+        this.now = new Date();
+
+        this.currentMonth = getDaysInMonth(this.now.getMonth(), this.now.getFullYear());
+        this.nextMonth = getDaysInMonth(this.now.getMonth() + 1, this.now.getFullYear());
 
         for (let i = 1; i < this.now.getDay(); i++) { // add days until today
            week.push(this.now.getDate() - this.now.getDay() + i);
         }
-
         if (week.length === 0) week.push(this.now.getDate()); // if week is empty then it's the first day of the week
 
-        for (let i = week.length; i < quantity; i++) { // add future days until a full week is included
-            week.push((week[week.length - 1]%31) + 1);
+        let j = this.currentMonth.indexOf(week[week.length - 1]) + 1; // find index of tomorrow (next day to add)
+        for (let i = 0; i < this.currentMonth.length - j; i++) { // add future days until a month is finished
+            week.push(this.currentMonth[j+i]);
+        }
+            // convert number of day in month into full date (day.month)
+        week = week.map((day) => Base.fixDate(day) + '.' + Base.fixDate(this.now.getMonth() + 1));
+        if (week.length >= quantity) return week; // if last day of month is also last day needed then finish
+            // set number of elements we already have
+        let weekLength = week.length;
+        for (let i = 0; i < quantity - weekLength; i++) { // add future days from next month
+            week.push(Base.fixDate(this.nextMonth[i]) + '.' + Base.fixDate(this.now.getMonth() + 2));
         }
 
         return week;
@@ -323,10 +345,12 @@ class ColumnClass extends HTMLElement {
             Output: -
             Creates a "starter" Elements.columns sub object containing starting data. Some of it will later be updated.
          */
+        //this.week[Base.Elements.columns.count - 1] + '.' + Base.fixDate(this.now.getMonth() + 1)
+
         Base.Elements.columns.children[Base.Elements.columns.count] = {
             id: Base.Elements.columns.count,
             dayName: Base.Elements.columns.dayNames[(Base.Elements.columns.count - 1) % 7],
-            date: this.week[Base.Elements.columns.count - 1] + '.' + Base.fixDate(this.now.getMonth() + 1),
+            date: this.week[Base.Elements.columns.count - 1],
             totalWorkedTime: {number: 0, string: '0h'},
             totalTime: '8h',
             title: 'Worklogs',
@@ -727,6 +751,11 @@ class Main {
     }
 
     init(columnQuantity = 5) {
+        /*  Input: columnQuantity (number)
+            Output: -
+            Creates columns in number given by user. Default number is 5, and maximum is 28 (4 weeks).
+         */
+        if (columnQuantity > 28) columnQuantity = 28;
         this.createColumns(columnQuantity);
     }
 
@@ -736,4 +765,4 @@ class Main {
 
 }
 
-(new Main()).init();
+(new Main()).init(5);
