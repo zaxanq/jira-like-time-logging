@@ -6,31 +6,47 @@ class BaseClass {
         this.init();
     }
 
+    idNumber(string) {
+        return Number(string.charAt(string.length - 1));
+    }
+
     app() {
         this.totalTime = {number: 480, string: '8h'};
-        this.Elements = { // main object that stores most of data/DOM links.
-            main: this.Dom('main.wrapper')[0],
-            columns: {
-                count: 0,
-                children: {
-                    0: {}
-                },
-                DOM: {
-                    0: {}
-                },
-                dayNames: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] // displayed in Column head
+        this.Main = this.Dom('main.wrapper')[0];
+        this.Columns = {
+            count: 0,
+            children: {
+                0: {}
             },
-            cards: {
-                count: 0,
-                children: {
-                    0: {}
-                }
+            DOM: {
+                0: {}
             },
-            dialog: {
+            dayNames: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] // displayed in Column head
+        };
+        this.Cards = {
+            count: 0,
+            children: {
+                0: {}
+            }
+        };
+        this.Dialogs = {
+            types: {logTime: 'logTime', cardEdit: 'cardEdit'},
+            logTime: {
                 title: 'Log time',
+                className: 'dialog__log-time',
                 inputs: {
                     names: ['card-name', 'description', 'task-name', 'task-type', 'time-spent'],
                     labels: ['Card name', 'Description', 'Task name', '', 'Time spent'],
+                    DOM: []
+                },
+                buttons: {}
+            },
+            cardEdit: {
+                title: 'Edit task',
+                className: 'dialog__edit-card',
+                inputs: {
+                    names: ['description', 'time-spent', 'task-name', 'task-type'],
+                    labels: ['Description', 'Time spent', 'Task name', ''],
                     DOM: []
                 },
                 buttons: {}
@@ -56,7 +72,7 @@ class BaseClass {
                 if (className.length) { // checking if it's an array
                     className.forEach((name) => this.classList.add(name));
                 } else {
-                    console.error(this.message.error.invalidClassName);
+                    console.error(Base.message.error.invalidClassName);
                 }
             }
             return this;
@@ -69,7 +85,7 @@ class BaseClass {
                 if (className.length) { // checking if it's an array
                     className.forEach((name) => this.classList.remove(name));
                 } else {
-                    console.error(this.message.error.invalidClassName);
+                    console.error(Base.message.error.invalidClassName);
                 }
             }
             return this;
@@ -136,7 +152,7 @@ class BaseClass {
         return [hours, minutes];
     }
 
-    convertStringToTime(string) {
+    stringToTime(string) {
         /*  Input: string
             Output: number
             Method gets a string with time value (i.e: "7h30m", "5h" "10m" "20m 4h", "1h 10m").
@@ -148,7 +164,7 @@ class BaseClass {
         return Number(removeLastChar(hours)) * 60 + Number(removeLastChar(minutes));
     }
 
-    convertTimeToString(number) {
+    timeToString(number) {
         /*  Input: number
             Output: string
             Method gets a number of minutes and returns it as a string in given format: "HHh MMm"
@@ -159,6 +175,14 @@ class BaseClass {
         let minutes = number % 60;
         return hours === 0 ? `${minutes}m` : minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
     }
+
+    stringToTimeToString(string) {
+        return this.stringToTime(this.timeToString(string));
+    }
+
+    timeToStringToTime(number) {
+        return this.timeToString(this.stringToTime(number));
+    }
 }
 const Base = new BaseClass;
 
@@ -167,19 +191,35 @@ class CardClass extends HTMLElement {
         super();
     }
 
-    fetchDataFromDialog() {
-        /*  Input: -
+    fetchDataFromDialog(type, cardId) {
+        /*  Input: type (string)
             Output: -
             This method is used to gather all data inserted into Dialog inputs into Elements.cards object.
             Elements.cards object will later deliver this data (in Card.create() method) to fill the card with info.
          */
-        Base.Elements.cards.children[++Base.Elements.cards.count] = {
-            cardName: Base.Elements.dialog.inputs.DOM[0].value,
-            description: Base.Elements.dialog.inputs.DOM[1].value,
-            taskName: Base.Elements.dialog.inputs.DOM[2].value,
-            taskType: Base.Elements.dialog.inputs.DOM[3].value,
-            timeLogged: Dialog.DialogInputTimeSpent,
-        };
+        if (type === Base.Dialogs.types.logTime) {
+            Base.Cards.children[++Base.Cards.count] = {
+                cardName: Base.Dialogs[type].inputs.DOM[0].value,
+                description: Base.Dialogs[type].inputs.DOM[1].value,
+                taskName: Base.Dialogs[type].inputs.DOM[2].value,
+                taskType: Base.Dialogs[type].inputs.DOM[3].value,
+                timeLogged: Dialog.DialogInputTimeSpent,
+            };
+        } else if (type === Base.Dialogs.types.cardEdit) {
+            let currentCardObject = Base.Cards.children[Base.idNumber(cardId)];
+            currentCardObject.description = Base.Dialogs[type].inputs.DOM[0].value;
+            currentCardObject.timeLogged = Dialog.DialogInputTimeSpent;
+            currentCardObject.taskName = Base.Dialogs[type].inputs.DOM[2].value;
+            currentCardObject.taskType = Base.Dialogs[type].inputs.DOM[3].value;
+        }
+    }
+
+    modify(type, cardId) {
+        Dialog.checkInputTimeSpent(type);
+        Column.getTimeLogged(Base.Cards.children[Base.idNumber(cardId)].timeLogged,
+            Dialog.state[type].openedBy, Base.Dialogs.types.cardEdit, cardId);
+
+        this.renderCard(Base.id(cardId), '', 'update');
     }
 
     create(parentId) {
@@ -191,15 +231,54 @@ class CardClass extends HTMLElement {
          */
             // Card element
         let newCard = Base.createElement('log-card',
-            {'class': ['column__card', 'card'], 'id': `card-${Base.Elements.cards.count}`},
+            {'class': ['column__card', 'card'], 'id': `card-${Base.Cards.count}`},
             Base.Dom(`#${parentId} .column__body`)[0]);
 
-        this.addToElementsObject(parentId); // new card will be added to Base.Elements.cards object.
+        this.addToElementsObject(parentId); // new card will be added to Base.Cards object.
 
         this.createCardHeader(newCard);
         this.createCardBody(newCard);
         this.createCardFooter(newCard);
+
+        this.addListener(newCard);
         return newCard;
+    }
+
+    renderCard(card, element, update) {
+        const renderPart = (element, cardId, property) => {
+            element.innerText = Base.Cards.children[Base.idNumber(cardId)][property];
+        };
+
+        if (update.includes('title')) {
+            renderPart(element, card.id, 'cardName');
+        }
+        else if (update.includes('description')) {
+            renderPart(element, card.id, 'description');
+        }
+        else if (update.includes('task-icon')) {
+            this.resetTaskIcon(card, element);
+        }
+        else if (update.includes('task-name')) {
+            renderPart(element, card.id, 'taskName');
+        }
+        else if (update.includes('logged-time')) {
+            element.innerText = Base.timeToStringToTime(Base.Cards.children[Base.idNumber(card.id)].timeLogged);
+        }
+        else if (update === 'update') {
+            renderPart(Base.Dom(`#${card.id} .card__description`)[0], card.id, 'description');
+            renderPart(Base.Dom(`#${card.id} .card__task-name`)[0], card.id, 'taskName');
+
+            this.resetTaskIcon(card, Base.Dom(`#${card.id} .card__status-icon`)[0]);
+
+            Base.Dom(`#${card.id} .card__logged-time`)[0].innerText =
+                Base.timeToStringToTime(Base.Cards.children[Base.idNumber(card.id)].timeLogged);
+        }
+    }
+
+    resetTaskIcon(card, element) {
+        let classesToRemove = [...element.classList].filter(className => className.match(/^status-icon__/g));
+        if (classesToRemove.length > 0) element.removeClass(classesToRemove);
+        element.addClass(`status-icon__${Base.Cards.children[Base.idNumber(card.id)].taskType}`);
     }
 
     addToElementsObject(parentId) {
@@ -207,8 +286,8 @@ class CardClass extends HTMLElement {
             Output: -
             Method adds parent column id and card id (card number) to Elements object.
          */
-        Base.Elements.cards.children[Base.Elements.cards.count].parentId = parentId;
-        Base.Elements.cards.children[Base.Elements.cards.count].id = Base.Elements.cards.count;
+        Base.Cards.children[Base.Cards.count].parentId = parentId;
+        Base.Cards.children[Base.Cards.count].id = Base.Cards.count;
     }
 
     createCardHeader(newCard) {
@@ -221,7 +300,7 @@ class CardClass extends HTMLElement {
 
         let newCardHeaderTitle = Base.createElement('span',
             {'class': 'card__name'}, newCardHeader);
-        newCardHeaderTitle.innerText = Base.Elements.cards.children[Base.Elements.cards.count].cardName;
+        this.renderCard(newCard, newCardHeaderTitle, 'title');
     }
 
     createCardBody(newCard) {
@@ -234,7 +313,7 @@ class CardClass extends HTMLElement {
 
         let newCardBodyDescription = Base.createElement('span',
             {'class': 'card__description'}, newCardBody);
-        newCardBodyDescription.innerText = Base.Elements.cards.children[Base.Elements.cards.count].description;
+        this.renderCard(newCard, newCardBodyDescription, 'description');
     }
 
     createCardFooter(newCard) {
@@ -249,18 +328,28 @@ class CardClass extends HTMLElement {
             {'class': 'card__task'}, newCardFooter);
 
         let newCardFooterTaskIcon = Base.createElement('i',
-            {'class': ['card__status-icon', 'status-icon',
-                    `status-icon__${Base.Elements.cards.children[Base.Elements.cards.count].taskType}`]},
-            newCardFooterTask);
+            {'class': ['card__status-icon', 'status-icon']}, newCardFooterTask);
+        this.renderCard(newCard, newCardFooterTaskIcon, 'task-icon');
+
 
         let newCardFooterTaskName = Base.createElement('span',
             {'class': 'card__task-name'}, newCardFooterTask);
-        newCardFooterTaskName.innerText = Base.Elements.cards.children[Base.Elements.cards.count].taskName;
+        newCardFooterTaskName.innerText = Base.Cards.children[Base.Cards.count].taskName;
+        this.renderCard(newCard, newCardFooterTaskName, 'task-name');
 
         let newCardFooterLoggedTime = Base.createElement('span',
             {'class': 'card__logged-time'}, newCardFooter);
-        newCardFooterLoggedTime.innerText = Base.convertTimeToString(
-            Base.convertStringToTime(Base.Elements.cards.children[Base.Elements.cards.count].timeLogged));
+        this.renderCard(newCard, newCardFooterLoggedTime, 'logged-time');
+    }
+
+    addListener(newCard) {
+        newCard.addEventListener('mousedown', (event) => {
+            event.stopPropagation();
+            Dialog.fetchDataFromCard(Base.Dialogs.types.cardEdit, newCard.id);
+            Dialog.open(Base.Dialogs.types.cardEdit,
+                Base.Cards.children[Base.idNumber(newCard.id)].parentId,
+                newCard.id);
+        });
     }
 }
 customElements.define('log-card', CardClass);
@@ -323,15 +412,15 @@ class ColumnClass extends HTMLElement {
         if (!this.week) this.week = this.setWeek(quantity);
 
             // create new sub object
-        Base.Elements.columns.DOM[++Base.Elements.columns.count] = {};
+        Base.Columns.DOM[++Base.Columns.count] = {};
 
             // a Column element.
         let newColumn = Base.createElement('log-column',
-            {'class': 'column', 'id': `column-${Base.Elements.columns.count}`},
-            Base.Elements.main);
-        Base.Elements.columns.DOM[Base.Elements.columns.count].column = newColumn;
+            {'class': 'column', 'id': `column-${Base.Columns.count}`},
+            Base.Main);
+        Base.Columns.DOM[Base.Columns.count].column = newColumn;
 
-        this.addToElementsObject(); // new card will be added to Base.Elements.columns object.
+        this.addToElementsObject(); // new card will be added to Base.Columns object.
 
         this.createColumnHead(newColumn);
         this.createColumnBody(newColumn);
@@ -345,12 +434,12 @@ class ColumnClass extends HTMLElement {
             Output: -
             Creates a "starter" Elements.columns sub object containing starting data. Some of it will later be updated.
          */
-        //this.week[Base.Elements.columns.count - 1] + '.' + Base.fixDate(this.now.getMonth() + 1)
+        //this.week[Base.Columns.count - 1] + '.' + Base.fixDate(this.now.getMonth() + 1)
 
-        Base.Elements.columns.children[Base.Elements.columns.count] = {
-            id: Base.Elements.columns.count,
-            dayName: Base.Elements.columns.dayNames[(Base.Elements.columns.count - 1) % 7],
-            date: this.week[Base.Elements.columns.count - 1],
+        Base.Columns.children[Base.Columns.count] = {
+            id: Base.Columns.count,
+            dayName: Base.Columns.dayNames[(Base.Columns.count - 1) % 7],
+            date: this.week[Base.Columns.count - 1],
             totalWorkedTime: {number: 0, string: '0h'},
             totalTime: '8h',
             title: 'Worklogs',
@@ -372,20 +461,20 @@ class ColumnClass extends HTMLElement {
 
         let newColumnHeadDateDay = Base.createElement('span',
             {'class': 'column__date-day'}, newColumnHeadDate);
-        newColumnHeadDateDay.innerText = Base.Elements.columns.children[Base.Elements.columns.count].dayName + ' ';
+        newColumnHeadDateDay.innerText = Base.Columns.children[Base.Columns.count].dayName + ' ';
 
         let newColumnHeadDateDate = Base.createElement('span',
             {'class': 'column__date-date'}, newColumnHeadDate);
-        newColumnHeadDateDate.innerText = Base.Elements.columns.children[Base.Elements.columns.count].date;
+        newColumnHeadDateDate.innerText = Base.Columns.children[Base.Columns.count].date;
 
         let newColumnHeadHours = Base.createElement('p',
             {'class': 'column__hours'}, newColumnHeadDetails);
 
         let newColumnHeadHoursWorked = Base.createElement('span',
             {'class': 'column__hours-worked'}, newColumnHeadHours);
-        Base.Elements.columns.DOM[Base.Elements.columns.count].totalWorkedTime = newColumnHeadHoursWorked;
+        Base.Columns.DOM[Base.Columns.count].totalWorkedTime = newColumnHeadHoursWorked;
         newColumnHeadHoursWorked.innerText =
-            Base.Elements.columns.children[Base.Elements.columns.count].totalWorkedTime.string;
+            Base.Columns.children[Base.Columns.count].totalWorkedTime.string;
 
         let newColumnHeadHoursOf = Base.createElement('span',
             {}, newColumnHeadHours);
@@ -393,19 +482,19 @@ class ColumnClass extends HTMLElement {
 
         let newColumnHeadHoursTotal = Base.createElement('span',
             {'class': 'column__hours-total'}, newColumnHeadHours);
-        newColumnHeadHoursTotal.innerText = Base.Elements.columns.children[Base.Elements.columns.count].totalTime;
+        newColumnHeadHoursTotal.innerText = Base.Columns.children[Base.Columns.count].totalTime;
 
         let newColumnHeadProgress = Base.createElement('div',
             {'class': 'column__progress'}, newColumnHead);
 
         let newColumnHeadProgressDone = Base.createElement('div',
             {'class': 'column__progress--done',
-                'id': `column-${Base.Elements.columns.count}__progress--done`}, newColumnHeadProgress);
-        Base.Elements.columns.DOM[Base.Elements.columns.count].progress = newColumnHeadProgressDone;
+                'id': `column-${Base.Columns.count}__progress--done`}, newColumnHeadProgress);
+        Base.Columns.DOM[Base.Columns.count].progress = newColumnHeadProgressDone;
 
         let newColumnHeadTitle = Base.createElement('h2',
             {'class': 'column__title'}, newColumnHead);
-        newColumnHeadTitle.innerText = Base.Elements.columns.children[Base.Elements.columns.count].title;
+        newColumnHeadTitle.innerText = Base.Columns.children[Base.Columns.count].title;
     }
 
     createColumnBody(newColumn) {
@@ -442,11 +531,11 @@ class ColumnClass extends HTMLElement {
             Add-task button will open a Dialog and if the Dialog.open() return true, it will create a Card.
          */
         Base.Dom(`#${parentId} .buttons__add-task`)[0].addEventListener('click', function() {
-            if (Dialog.open(parentId)) Card.create(parentId);
+            if (Dialog.open(Base.Dialogs.types.logTime, parentId)) Card.create(parentId);
         });
     }
 
-    getTimeLogged(time, columnId) {
+    getTimeLogged(time, columnId, type, cardId) {
         /*  Input: time (string), columnId (string)
             Output: -
             Method takes a time value and converts it to a number, which is later added to total worked time
@@ -454,13 +543,22 @@ class ColumnClass extends HTMLElement {
                 total worked time string value.
             With both these values renderWorkedTime() and renderProgress() can be now executed.
          */
-        let columnNo = columnId.charAt(columnId.length - 1);
+        let columnNo = Base.idNumber(columnId);
+        let cardNo = Base.idNumber(cardId);
+        time = Base.stringToTime(time);
 
-        time = Base.convertStringToTime(time);
+        if (type === Base.Dialogs.types.cardEdit) {
+            Base.Columns.children[columnNo].totalWorkedTime.number -=
+                Base.stringToTime(Base.Cards.children[cardNo].timeLogged);
 
-        Base.Elements.columns.children[columnNo].totalWorkedTime.number += time;
-        Base.Elements.columns.children[columnNo].totalWorkedTime.string =
-            Base.convertTimeToString(Base.Elements.columns.children[columnNo].totalWorkedTime.number);
+            Card.fetchDataFromDialog(type, cardId);
+            time = Base.stringToTime(Base.Cards.children[cardNo].timeLogged);
+        }
+
+        Base.Columns.children[columnNo].totalWorkedTime.number += time;
+        Base.Columns.children[columnNo].totalWorkedTime.string =
+            Base.timeToString(Base.Columns.children[columnNo].totalWorkedTime.number);
+
         this.renderWorkedTime(columnNo);
         this.renderProgress(columnNo);
     }
@@ -470,8 +568,8 @@ class ColumnClass extends HTMLElement {
             Output: -
             Updates total worked time in a Column header with new (updated) value from Elements.columns object.
          */
-        Base.Elements.columns.DOM[columnNo].totalWorkedTime.innerText =
-            Base.Elements.columns.children[columnNo].totalWorkedTime.string;
+        Base.Columns.DOM[columnNo].totalWorkedTime.innerText =
+            Base.Columns.children[columnNo].totalWorkedTime.string;
     }
 
     renderProgress(columnNo) {
@@ -479,8 +577,8 @@ class ColumnClass extends HTMLElement {
             Output: -
             Updates inline css width of progress bar(--done) based on new (update) value from Elements.columns object.
          */
-        Base.Elements.columns.DOM[columnNo].progress.setAttribute('style',
-            `width: ${Base.Elements.columns.children[columnNo].totalWorkedTime.number / Base.totalTime.number * 100}%`);
+        Base.Columns.DOM[columnNo].progress.setAttribute('style',
+            `width: ${Base.Columns.children[columnNo].totalWorkedTime.number / Base.totalTime.number * 100}%`);
     }
 
 }
@@ -492,62 +590,65 @@ class DialogClass extends HTMLElement {
         super();
     }
 
-    open(columnId) {
-        /*  Input: columnId (string)
+    createOverlay() {
+        this.dialogOverlay = Base.createElement('div',
+            {'class': ['dialog-overlay', 'dialog-overlay--hidden']}, Base.Main);
+    }
+
+    open(type, columnId, cardId) {
+        /*  Input: type (string), id (string)
             Output: -
-            This method shows the Dialog overlay (dark transparent div between app and dialog) and the Dialog itself.
+            This method shows the Dialog overlay (dark transparent div between app and dialog) and the Dialog
+                of given type.
             There is a small security measure in form of a state that changes when Dialog is opened correctly
                 so that it will not work if Dialog is shown with a help of Dev Tools.
          */
         Base.class('dialog-overlay')[0].removeClass('dialog-overlay--hidden');
-        Base.class('dialog')[0].removeClass('dialog--hidden');
-        this.state.opened = !this.state.opened;
-        this.state.openedBy = columnId;
+        Base.class(Base.Dialogs[type].className)[0].removeClass('dialog--hidden');
+        this.state[type].opened = !this.state[type].opened;
+        this.state[type].openedBy = columnId;
+        if (type === Base.Dialogs.types.cardEdit) this.state[type].openedCard = cardId;
     }
 
-    close() {
+    close(type) {
         /*  Input: -
             Output: -
             Method closes Dialog and after a small timeout it removes any values from the Dialog.
          */
         Base.class('dialog-overlay')[0].addClass('dialog-overlay--hidden');
-        Base.class('dialog')[0].addClass('dialog--hidden');
-        this.state.opened = !this.state.opened;
-        this.state.openedBy = '';
+        Base.class(Base.Dialogs[type].className)[0].addClass('dialog--hidden');
+        this.state[type].opened = !this.state[type].opened;
+        this.state[type].openedBy = '';
         setTimeout(() => {
-            Base.Elements.dialog.inputs.DOM.forEach((input) => {input.value = null});
+            Base.Dialogs[type].inputs.DOM.forEach((input) => {input.value = null});
         }, 250);
-
     }
 
-    init() {
-        /*  Input: -
+    init(type) {
+        /*  Input: type (string)
             Output: -
             Initialization method. Creates DOM array and buttons object in Elements.dialog object.
             It also creates the Dialog overlay and Dialog component and executes creation of Dialog content.
          */
-        Base.Elements.dialog.inputs.DOM = [];
-        Base.Elements.dialog.buttons = {};
-        this.state = {
+        if (!this.state) this.state = {};
+        this.state[type] = {
             opened: false,
+            openedCard: '',
             openedBy: '',
         };
 
-        this.dialogOverlay = Base.createElement('div',
-            {'class': ['dialog-overlay', 'dialog-overlay--hidden']}, Base.Elements.main);
-
         this.dialog = Base.createElement('log-dialog',
-            {'class': ['dialog', 'dialog--hidden']}, this.dialogOverlay);
+            {'class': ['dialog', Base.Dialogs[type].className, 'dialog--hidden']}, this.dialogOverlay);
 
         this.dialogForm = Base.createElement('form',
             {}, this.dialog);
 
-        this.createDialogContent();
-        this.addListeners();
+        this.createDialogContent(type);
+        this.addListeners(type);
     }
 
-    createDialogContent() {
-        /*  Input: -
+    createDialogContent(type) {
+        /*  Input: type (string)
             Output: -
             This method creates Dialog content and inputs.
          */
@@ -556,13 +657,12 @@ class DialogClass extends HTMLElement {
 
         let dialogTitle = Base.createElement('h2',
             {'class': 'dialog__title'}, dialogHeader);
-        dialogTitle.innerText = 'Log Time';
+        dialogTitle.innerText = Base.Dialogs[type].title;
 
         let dialogBody = Base.createElement('div',
             {'class': 'dialog__body'}, this.dialogForm);
-        dialogTitle.innerText = 'Log Time';
 
-        let Inputs = Base.Elements.dialog.inputs;
+        let Inputs = Base.Dialogs[type].inputs;
         for (let i = 0; i < Inputs.names.length; i++) {
             let dialogInputContainer = Base.createElement('div',
                 {'class': ['dialog__input-container', 'input-container', `input-container__${Inputs.names[i]}`]}, dialogBody);
@@ -584,7 +684,7 @@ class DialogClass extends HTMLElement {
                     {'class': ['dialog__input', 'input', `input__${Inputs.names[i]}`]}, dialogInputContainer);
                 dialogInput.type = 'text';
             }
-            Base.Elements.dialog.inputs.DOM.push(dialogInput);
+            Base.Dialogs[type].inputs.DOM.push(dialogInput);
 
             let dialogInputLabel = Base.createElement('label',
                 {'class': ['dialog__input-label', 'input-label', `input-label__${Inputs.names[i]}`]}, dialogInputContainer);
@@ -608,51 +708,64 @@ class DialogClass extends HTMLElement {
             {'class': ['dialog__button', 'button', 'dialog__button--submit']}, dialogButtons);
         this.dialogButtonSubmit.innerText = 'Submit';
         this.dialogButtonSubmit.type = 'submit';
-        Base.Elements.dialog.buttons.submit = this.dialogButtonSubmit;
+        Base.Dialogs[type].buttons.submit = this.dialogButtonSubmit;
 
         this.dialogButtonCancel = Base.createElement('button',
             {'class': ['dialog__button', 'button', 'dialog__button--cancel']}, dialogButtons);
         this.dialogButtonCancel.innerText = 'Cancel';
-        Base.Elements.dialog.buttons.cancel = this.dialogButtonCancel;
+        Base.Dialogs[type].buttons.cancel = this.dialogButtonCancel;
     }
 
-    addListeners() {
-        /*  Input: -
+    addListeners(type) {
+        /*  Input: type (string)
             Output: -
             Method adds EventListeners to Dialog Form, Cancel button, inputs and Dialog overlay.
          */
-        this.dialogForm.addEventListener('submit', event => {
-            event.stopPropagation();
-            event.preventDefault();
-            if (this.state.opened === true && this.validation() === true) {
-                Card.fetchDataFromDialog();
-                Column.getTimeLogged(Base.Elements.cards.children[Base.Elements.cards.count].timeLogged,
-                    this.state.openedBy);
-                Card.create(this.state.openedBy);
-                this.close();
-            }
-        });
+        if (type === Base.Dialogs.types.logTime) {
+            this.dialogForm.addEventListener('submit', event => {
+                event.stopPropagation();
+                event.preventDefault();
+                if (this.state[type].opened === true && this.validation(type) === true) {
+                    Card.fetchDataFromDialog(type);
+                    Column.getTimeLogged(Base.Cards.children[Base.Cards.count].timeLogged,
+                        this.state[type].openedBy, type);
+                    Card.create(this.state[type].openedBy);
+                    this.close(type);
+                }
+            });
+
+            Base.Dialogs[type].inputs.DOM.forEach(input => {
+                input.addEventListener('input', () => {
+                    this.clearInvalidInputState(input);
+                });
+            });
+        } else if (type === Base.Dialogs.types.cardEdit) {
+            this.dialogForm.addEventListener('submit', event => {
+                event.stopPropagation();
+                event.preventDefault();
+                if (this.state[type].opened === true && this.validation(type) === true) {
+                    Card.modify(type, this.state[type].openedCard);
+                    this.close(type);
+                }
+            });
+        }
 
         this.dialogButtonCancel.addEventListener('mousedown', event => {
             event.stopPropagation();
-            if (this.state.opened === true) {
-                this.close();
+            if (this.state[type].opened === true) {
+                this.close(type);
             }
-        });
-        this.dialogOverlay.addEventListener('mousedown', event => {
-            event.stopPropagation();
-            if (this.state.opened === true) {
-                this.close();
-            }
-        });
-        this.dialog.addEventListener('mousedown', event => {
-            event.stopPropagation();
         });
 
-        Base.Elements.dialog.inputs.DOM.forEach(input => {
-            input.addEventListener('input', () => {
-                this.clearInvalidInputState(input);
-            });
+        this.dialogOverlay.addEventListener('mousedown', event => {
+            event.stopPropagation();
+            if (this.state[type].opened === true) {
+                this.close(type);
+            }
+        });
+
+        this.dialog.addEventListener('mousedown', event => {
+            event.stopPropagation();
         });
     }
 
@@ -676,24 +789,27 @@ class DialogClass extends HTMLElement {
         input.parentNode.lastElementChild.innerText = Base.message.warning[state];
     }
 
-    validation() {
-        /*  Input: -
+    validation(type) {
+        /*  Input: type (string)
             Output: true/false
             Checks every Dialog input value in order to validate it. If the result of checkInput() method is a false
                 addInvalidInputState() is executed to mark the input as invalid.
             This method is executed when Dialog Form is submitted.
          */
-        for (let input of Base.Elements.dialog.inputs.DOM) {
-            if (!this.checkInput(input).result) {
-                this.addInvalidInputState(input, this.checkInput(input).reason);
-                return false;
+        if (type === Base.Dialogs.types.logTime) {
+            for (let input of Base.Dialogs[type].inputs.DOM) {
+                if (!this.checkInput(input, type).result) {
+                    this.addInvalidInputState(input, this.checkInput(input, type).reason);
+                    return false;
+                }
             }
         }
+
         return true;
     }
 
-    checkInput(input) {
-        /*  Input: input (Node)
+    checkInput(input, type) {
+        /*  Input: input (Node), type (string)
             Output: object {result: <boolean>, reason: <string>}
             This method checks generic input validation, each input except the Description is technically required.
             Due to default HTML form validation the required attribute is missing from inputs and instead
@@ -702,43 +818,57 @@ class DialogClass extends HTMLElement {
                 to check these specific inputs.
          */
         if (!input.value && input.name !== 'input__description') return {result: false, reason: 'requiredInput'};
-        else if (input.name === 'input__task-name') return this.checkInputTaskName();
-        else if (input.name === 'input__time-spent') return this.checkInputTimeSpent();
+        else if (input.name === 'input__task-name') return this.checkInputTaskName(type);
+        else if (input.name === 'input__time-spent') return this.checkInputTimeSpent(type);
         return {result: true, reason: ''}
     }
 
-    checkInputTaskName() {
-        /*  Input: -
+    checkInputTaskName(type) {
+        /*  Input: type (string)
             Output: object {result: <boolean>, reason: <string>}
             Checks if Dialog TaskName input contains value in format XXX-YYY.. where X is a letter and Y is a digit.
          */
         let regExp = /^([a-zA-Z]{3}-[0-9]*)$/g;
 
-        this.DialogInputTaskName = Base.Elements.dialog.inputs.DOM[2].value.match(regExp);
+        this.DialogInputTaskName = Base.Dialogs[type].inputs.DOM[2].value.match(regExp);
 
         if (this.DialogInputTaskName) return {result: true, reason: ''};
         return {result: false, reason: 'invalidTaskNameFormat'};
     }
 
-    checkInputTimeSpent() {
-        /*  Input: -
+    checkInputTimeSpent(type) {
+        /*  Input: type (string)
             Output: object {result: <boolean>, reason: <string>}
             Checks if Dialog TimeSpent input contains valid time values.
          */
         let regExp = /([0-9]{1,2}h|[0-9]{1,3}m)/g;
 
         // get all time values (i.e "30m", "5h", "4h20m", "5h 50m", "50m1h", "40m 4h")
-        this.DialogInputTimeSpent = Base.Elements.dialog.inputs.DOM[4].value.match(regExp);
+        if (type === Base.Dialogs.types.logTime) {
+            this.DialogInputTimeSpent = Base.Dialogs[type].inputs.DOM[4].value.match(regExp);
+        } else if (type === Base.Dialogs.types.cardEdit) {
+            this.DialogInputTimeSpent = Base.Dialogs[type].inputs.DOM[1].value.match(regExp);
+        }
 
         if (this.DialogInputTimeSpent) { // if such time value exists
             this.DialogInputTimeSpent = this.DialogInputTimeSpent.filter(
-                (value) => Base.convertStringToTime(value) > 0); // filter out everything "bigger" than "0m" or "0h"
+                (value) => Base.stringToTime(value) > 0); // filter out everything "bigger" than "0m" or "0h"
 
                 // execute checkTime() to get first hours and minutes values and then join it into a string
-            this.DialogInputTimeSpent = Base.checkTime(this.DialogInputTimeSpent.join('')).join('');
+            this.DialogInputTimeSpent = Base.checkTime(this.DialogInputTimeSpent.join('')).join(' ');
             return {result: true, reason: ''};
         }
         return {result: false, reason: 'invalidValue'}; // if no valid time values were given
+    }
+
+    fetchDataFromCard(type, cardId) {
+        if (type === Base.Dialogs.types.cardEdit) {
+            let id = Base.idNumber(cardId);
+            Base.Dialogs[type].inputs.DOM[0].value = Base.Cards.children[id].description;
+            Base.Dialogs[type].inputs.DOM[1].value = Base.Cards.children[id].timeLogged;
+            Base.Dialogs[type].inputs.DOM[2].value = Base.Cards.children[id].taskName;
+            Base.Dialogs[type].inputs.DOM[3].value = Base.Cards.children[id].taskType;
+        }
     }
 }
 customElements.define('log-dialog', DialogClass);
@@ -747,7 +877,9 @@ let Dialog = new DialogClass;
 class Main {
     constructor() {
          // it's important to invoke Dialog.init() here
-        Dialog.init();
+        Dialog.createOverlay();
+        Dialog.init(Base.Dialogs.types.logTime);
+        Dialog.init(Base.Dialogs.types.cardEdit);
     }
 
     init(columnQuantity = 5) {
