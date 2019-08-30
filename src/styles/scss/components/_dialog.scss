@@ -23,6 +23,7 @@ $dialog-padding-horizontal: 5rem;
 }
 
 .dialog {
+    position: absolute;
     @include size(40rem, 60rem);
     @include flex(flex-start, center, column);
     //min-width: 40vw;
@@ -51,6 +52,11 @@ $dialog-padding-horizontal: 5rem;
 
 .dialog__input-container {
     margin-bottom: 3rem;
+}
+
+.dialog--hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .dialog__input.input__description {
