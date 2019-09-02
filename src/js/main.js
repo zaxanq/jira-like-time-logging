@@ -7,7 +7,11 @@ class BaseClass {
     }
 
     idNumber(string) {
-        return Number(string.charAt(string.length - 1));
+        /* Input: string
+            Output: number
+            This method takes a string - i.e. "card-14" - and returns the number at the end, in this case: 14.
+         */
+        return Number(string.slice(string.indexOf('-') + 1));
     }
 
     app() {
@@ -30,14 +34,14 @@ class BaseClass {
             }
         };
         this.Dialogs = {
-            types: {logTime: 'logTime', cardEdit: 'cardEdit'},
+            types: {logTime: 'logTime', cardEdit: 'cardEdit', cancel: 'cancel'},
             logTime: {
                 title: 'Log time',
                 className: 'dialog__log-time',
                 inputs: {
                     names: ['card-name', 'description', 'task-name', 'task-type', 'time-spent'],
                     labels: ['Card name', 'Description', 'Task name', '', 'Time spent'],
-                    DOM: []
+                    DOM: {}
                 },
                 buttons: {}
             },
@@ -47,7 +51,17 @@ class BaseClass {
                 inputs: {
                     names: ['description', 'time-spent', 'task-name', 'task-type'],
                     labels: ['Description', 'Time spent', 'Task name', ''],
-                    DOM: []
+                    DOM: {}
+                },
+                buttons: {}
+            },
+            cancel: {
+                title: 'Cancel?',
+                className: 'dialog__cancel',
+                inputs: {
+                    names: [],
+                    labels: [],
+                    DOM: {}
                 },
                 buttons: {}
             }
@@ -176,11 +190,11 @@ class BaseClass {
         return hours === 0 ? `${minutes}m` : minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
     }
 
-    stringToTimeToString(string) {
+    stringToTimeToString(string) { // shortcut method
         return this.stringToTime(this.timeToString(string));
     }
 
-    timeToStringToTime(number) {
+    timeToStringToTime(number) { // shortcut method
         return this.timeToString(this.stringToTime(number));
     }
 }
@@ -192,29 +206,38 @@ class CardClass extends HTMLElement {
     }
 
     fetchDataFromDialog(type, cardId) {
-        /*  Input: type (string)
+        /*  Input: type (string), cardId (string)
             Output: -
-            This method is used to gather all data inserted into Dialog inputs into Elements.cards object.
-            Elements.cards object will later deliver this data (in Card.create() method) to fill the card with info.
+            This method gathers all the data inserted into Dialog inputs and hands it over to Base.Cards object.
+            Base.Cards object will later deliver this data (in Card.create()) to fill the card with it.
          */
+            // if type of operation is a logTime, the object is created.
         if (type === Base.Dialogs.types.logTime) {
             Base.Cards.children[++Base.Cards.count] = {
-                cardName: Base.Dialogs[type].inputs.DOM[0].value,
-                description: Base.Dialogs[type].inputs.DOM[1].value,
-                taskName: Base.Dialogs[type].inputs.DOM[2].value,
-                taskType: Base.Dialogs[type].inputs.DOM[3].value,
+                cardName: Base.Dialogs[type].inputs.DOM['card-name'].value,
+                description: Base.Dialogs[type].inputs.DOM['description'].value,
+                taskName: Base.Dialogs[type].inputs.DOM['task-name'].value,
+                taskType: Base.Dialogs[type].inputs.DOM['task-type'].value,
                 timeLogged: Dialog.DialogInputTimeSpent,
             };
-        } else if (type === Base.Dialogs.types.cardEdit) {
+        } else if (type === Base.Dialogs.types.cardEdit) { // otherwise it is modified
             let currentCardObject = Base.Cards.children[Base.idNumber(cardId)];
-            currentCardObject.description = Base.Dialogs[type].inputs.DOM[0].value;
+            currentCardObject.description = Base.Dialogs[type].inputs.DOM['description'].value;
             currentCardObject.timeLogged = Dialog.DialogInputTimeSpent;
-            currentCardObject.taskName = Base.Dialogs[type].inputs.DOM[2].value;
-            currentCardObject.taskType = Base.Dialogs[type].inputs.DOM[3].value;
+            currentCardObject.taskName = Base.Dialogs[type].inputs.DOM['task-name'].value;
+            currentCardObject.taskType = Base.Dialogs[type].inputs.DOM['task-type'].value;
         }
     }
 
     modify(type, cardId) {
+        /*  Input: type (string), cardId (string)
+            Output: -
+            This method is executed when user submits the Edit task Dialog.
+            It executes Dialog.checkInputTimeSpent() to update Dialog.DialogInputTimeSpent.
+            This variable will later be necessary in Card.fetchDataFromDialog().
+            It also uses Column.getTimeLogged() to update data inside Base.Columns object
+                and this.renderCard() to update data displayed on the card.
+         */
         Dialog.checkInputTimeSpent(type);
         Column.getTimeLogged(Base.Cards.children[Base.idNumber(cardId)].timeLogged,
             Dialog.state[type].openedBy, Base.Dialogs.types.cardEdit, cardId);
@@ -223,7 +246,7 @@ class CardClass extends HTMLElement {
     }
 
     create(parentId) {
-        /*  Input: id of a column in which the Card is supposed to be created in (string)
+        /*  Input: parentId (string)
             Output: Card element (Node)
             Method creates a <log-card></log-card> element (a "Card"), that displays a task.
             The Card is created only after Dialog form is submitted and it is validated as correct.
@@ -245,6 +268,11 @@ class CardClass extends HTMLElement {
     }
 
     renderCard(card, element, update) {
+        /*  Input: card (Node), element (Node), update (string)
+            Output: -
+            Method renders chosen part of card to be updated (depending on update value).
+            Update value can also be simply a 'update' which will render all data that can be modified.
+         */
         const renderPart = (element, cardId, property) => {
             element.innerText = Base.Cards.children[Base.idNumber(cardId)][property];
         };
@@ -275,14 +303,18 @@ class CardClass extends HTMLElement {
         }
     }
 
-    resetTaskIcon(card, element) {
-        let classesToRemove = [...element.classList].filter(className => className.match(/^status-icon__/g));
-        if (classesToRemove.length > 0) element.removeClass(classesToRemove);
-        element.addClass(`status-icon__${Base.Cards.children[Base.idNumber(card.id)].taskType}`);
+    resetTaskIcon(card, iconElement) {
+        /*  Input: card (Node), iconElement (Node)
+            Output: -
+            Method removes previous taskIcon and sets a new one depending on taskType property of Base.Cards object.
+         */
+        let classesToRemove = [...iconElement.classList].filter(className => className.match(/^status-icon__/g));
+        if (classesToRemove.length > 0) iconElement.removeClass(classesToRemove);
+        iconElement.addClass(`status-icon__${Base.Cards.children[Base.idNumber(card.id)].taskType}`);
     }
 
     addToElementsObject(parentId) {
-        /*  Input: Input: id of a column in which the Card is supposed to be created in (string)
+        /*  Input: id of a column in which the Card is supposed to be created in (string)
             Output: -
             Method adds parent column id and card id (card number) to Elements object.
          */
@@ -343,12 +375,18 @@ class CardClass extends HTMLElement {
     }
 
     addListener(newCard) {
-        newCard.addEventListener('mousedown', (event) => {
+        /*  Input: newCard (Node)
+            Output: -
+            Method adds an EventListener to the card. If it is pressed, Edit task Dialog opens.
+         */
+        newCard.addEventListener('mouseup', (event) => {
             event.stopPropagation();
+            if (event.button === 0) { // left mouse button only
             Dialog.fetchDataFromCard(Base.Dialogs.types.cardEdit, newCard.id);
             Dialog.open(Base.Dialogs.types.cardEdit,
                 Base.Cards.children[Base.idNumber(newCard.id)].parentId,
                 newCard.id);
+            }
         });
     }
 }
@@ -593,6 +631,9 @@ class DialogClass extends HTMLElement {
     createOverlay() {
         this.dialogOverlay = Base.createElement('div',
             {'class': ['dialog-overlay', 'dialog-overlay--hidden']}, Base.Main);
+
+        this.dialogCancelOverlay = Base.createElement('div',
+            {'class': ['dialog-cancel-overlay', 'dialog-overlay--hidden']}, this.dialogOverlay);
     }
 
     open(type, columnId, cardId) {
@@ -603,11 +644,16 @@ class DialogClass extends HTMLElement {
             There is a small security measure in form of a state that changes when Dialog is opened correctly
                 so that it will not work if Dialog is shown with a help of Dev Tools.
          */
-        Base.class('dialog-overlay')[0].removeClass('dialog-overlay--hidden');
-        Base.class(Base.Dialogs[type].className)[0].removeClass('dialog--hidden');
+        if (type !== Base.Dialogs.types.cancel) {
+            this.state[type].openedBy = columnId;
+            Base.class('dialog-overlay')[0].removeClass('dialog-overlay--hidden');
+            if (type === Base.Dialogs.types.cardEdit) this.state[type].openedCard = cardId;
+        } else {
+            Base.class('dialog-cancel-overlay')[0].removeClass('dialog-overlay--hidden');
+            Base.Dom('.dialog--visible')[0].addClass('dialog--cancelable');
+        }
         this.state[type].opened = !this.state[type].opened;
-        this.state[type].openedBy = columnId;
-        if (type === Base.Dialogs.types.cardEdit) this.state[type].openedCard = cardId;
+        Base.class(Base.Dialogs[type].className)[0].removeClass('dialog--hidden').addClass('dialog--visible');
     }
 
     close(type) {
@@ -615,12 +661,18 @@ class DialogClass extends HTMLElement {
             Output: -
             Method closes Dialog and after a small timeout it removes any values from the Dialog.
          */
-        Base.class('dialog-overlay')[0].addClass('dialog-overlay--hidden');
-        Base.class(Base.Dialogs[type].className)[0].addClass('dialog--hidden');
+        if (type !== Base.Dialogs.types.cancel) {
+            Base.class('dialog-overlay')[0].addClass('dialog-overlay--hidden');
+        } else {
+            Base.class('dialog-cancel-overlay')[0].addClass('dialog-overlay--hidden');
+            Base.Dom('.dialog--cancelable')[0].removeClass('dialog--cancelable');
+        }
+        Base.class(Base.Dialogs[type].className)[0].addClass('dialog--hidden').removeClass('dialog--visible');
         this.state[type].opened = !this.state[type].opened;
         this.state[type].openedBy = '';
+
         setTimeout(() => {
-            Base.Dialogs[type].inputs.DOM.forEach((input) => {input.value = null});
+            Object.values(Base.Dialogs[type].inputs.DOM).forEach((input) => {input.value = null});
         }, 250);
     }
 
@@ -637,8 +689,13 @@ class DialogClass extends HTMLElement {
             openedBy: '',
         };
 
-        this.dialog = Base.createElement('log-dialog',
-            {'class': ['dialog', Base.Dialogs[type].className, 'dialog--hidden']}, this.dialogOverlay);
+        if (type !== Base.Dialogs.types.cancel) {
+            this.dialog = Base.createElement('log-dialog',
+                {'class': ['dialog', Base.Dialogs[type].className, 'dialog--hidden']}, this.dialogOverlay);
+        } else {
+            this.dialog = Base.createElement('log-dialog',
+                {'class': ['dialog', Base.Dialogs[type].className, 'dialog--hidden']}, this.dialogCancelOverlay);
+        }
 
         this.dialogForm = Base.createElement('form',
             {}, this.dialog);
@@ -679,12 +736,13 @@ class DialogClass extends HTMLElement {
                         {'class': ['dialog__input--option', 'select__option', `input__${Inputs.names[i]}`]}, dialogInput);
                     dialogInputOption.innerText = type;
                 }
+                dialogInput.value = '';
             } else {
                 dialogInput = Base.createElement('input',
                     {'class': ['dialog__input', 'input', `input__${Inputs.names[i]}`]}, dialogInputContainer);
                 dialogInput.type = 'text';
             }
-            Base.Dialogs[type].inputs.DOM.push(dialogInput);
+            Base.Dialogs[type].inputs.DOM[Inputs.names[i]] = dialogInput;
 
             let dialogInputLabel = Base.createElement('label',
                 {'class': ['dialog__input-label', 'input-label', `input-label__${Inputs.names[i]}`]}, dialogInputContainer);
@@ -706,14 +764,27 @@ class DialogClass extends HTMLElement {
 
         this.dialogButtonSubmit = Base.createElement('input',
             {'class': ['dialog__button', 'button', 'dialog__button--submit']}, dialogButtons);
-        this.dialogButtonSubmit.innerText = 'Submit';
+        this.dialogButtonSubmit.value = type === Base.Dialogs.types.cancel ? 'Cancel' : 'Submit';
+
         this.dialogButtonSubmit.type = 'submit';
         Base.Dialogs[type].buttons.submit = this.dialogButtonSubmit;
 
         this.dialogButtonCancel = Base.createElement('button',
             {'class': ['dialog__button', 'button', 'dialog__button--cancel']}, dialogButtons);
-        this.dialogButtonCancel.innerText = 'Cancel';
+        this.dialogButtonCancel.innerText = type === Base.Dialogs.types.cancel ? 'Go back' : 'Cancel';
         Base.Dialogs[type].buttons.cancel = this.dialogButtonCancel;
+    }
+
+    confirm(action, dialogToClose) {
+        if (action === 'cancel') {
+            this.dialogToClose = dialogToClose;
+            Dialog.open(Base.Dialogs.types.cancel);
+        }
+    }
+
+    cancelDialogs() {
+        this.close(Base.Dialogs.types.cancel);
+        this.close(Base.Dialogs.types[this.dialogToClose]);
     }
 
     addListeners(type) {
@@ -734,7 +805,7 @@ class DialogClass extends HTMLElement {
                 }
             });
 
-            Base.Dialogs[type].inputs.DOM.forEach(input => {
+            Object.values(Base.Dialogs[type].inputs.DOM).forEach(input => {
                 input.addEventListener('input', () => {
                     this.clearInvalidInputState(input);
                 });
@@ -749,22 +820,40 @@ class DialogClass extends HTMLElement {
                 }
             });
         }
+        if (type === Base.Dialogs.types.cancel) {
+            this.dialogForm.addEventListener('submit', event => {
+                event.stopPropagation();
+                event.preventDefault();
+                this.cancelDialogs();
+            });
 
-        this.dialogButtonCancel.addEventListener('mousedown', event => {
-            event.stopPropagation();
-            if (this.state[type].opened === true) {
-                this.close(type);
+            this.dialogButtonCancel.addEventListener('mouseup', event => {
+                event.stopPropagation();
+                event.preventDefault();
+                if (event.button === 0) { // left mouse button only
+                    this.close(type);
+                }
+            });
+
+            this.dialogCancelOverlay.addEventListener('mouseup', event => {
+                event.stopPropagation();
+            });
+        } else {
+            if (this.noCancelListeners) {
+                [this.dialogButtonCancel, this.dialogOverlay].map(element => element.addEventListener('mouseup', event => {
+                    event.stopPropagation();
+                    if (this.state[type].opened === true) {
+                        if (event.button === 0) { // left mouse button only
+                            if (Dialog.areInputsEmpty(type)) this.close(type);
+                            else this.confirm('cancel', type);
+                        }
+                    }
+                }));
+                this.noCancelListeners = false;
             }
-        });
+        }
 
-        this.dialogOverlay.addEventListener('mousedown', event => {
-            event.stopPropagation();
-            if (this.state[type].opened === true) {
-                this.close(type);
-            }
-        });
-
-        this.dialog.addEventListener('mousedown', event => {
+        this.dialog.addEventListener('mouseup', event => {
             event.stopPropagation();
         });
     }
@@ -797,7 +886,7 @@ class DialogClass extends HTMLElement {
             This method is executed when Dialog Form is submitted.
          */
         if (type === Base.Dialogs.types.logTime) {
-            for (let input of Base.Dialogs[type].inputs.DOM) {
+            for (let input of Object.values(Base.Dialogs[type].inputs.DOM)) {
                 if (!this.checkInput(input, type).result) {
                     this.addInvalidInputState(input, this.checkInput(input, type).reason);
                     return false;
@@ -805,6 +894,14 @@ class DialogClass extends HTMLElement {
             }
         }
 
+        return true;
+    }
+
+    areInputsEmpty(type) {
+        let names = Base.Dialogs[type].inputs.names;
+        for (let i = 0; i < names.length - 1; i++) {
+            if (Base.Dialogs[type].inputs.DOM[names[i]].value) return false;
+        }
         return true;
     }
 
@@ -830,7 +927,7 @@ class DialogClass extends HTMLElement {
          */
         let regExp = /^([a-zA-Z]{3}-[0-9]*)$/g;
 
-        this.DialogInputTaskName = Base.Dialogs[type].inputs.DOM[2].value.match(regExp);
+        this.DialogInputTaskName = Base.Dialogs[type].inputs.DOM['task-name'].value.match(regExp);
 
         if (this.DialogInputTaskName) return {result: true, reason: ''};
         return {result: false, reason: 'invalidTaskNameFormat'};
@@ -845,9 +942,9 @@ class DialogClass extends HTMLElement {
 
         // get all time values (i.e "30m", "5h", "4h20m", "5h 50m", "50m1h", "40m 4h")
         if (type === Base.Dialogs.types.logTime) {
-            this.DialogInputTimeSpent = Base.Dialogs[type].inputs.DOM[4].value.match(regExp);
+            this.DialogInputTimeSpent = Base.Dialogs[type].inputs.DOM['time-spent'].value.match(regExp);
         } else if (type === Base.Dialogs.types.cardEdit) {
-            this.DialogInputTimeSpent = Base.Dialogs[type].inputs.DOM[1].value.match(regExp);
+            this.DialogInputTimeSpent = Base.Dialogs[type].inputs.DOM['time-spent'].value.match(regExp);
         }
 
         if (this.DialogInputTimeSpent) { // if such time value exists
@@ -864,10 +961,10 @@ class DialogClass extends HTMLElement {
     fetchDataFromCard(type, cardId) {
         if (type === Base.Dialogs.types.cardEdit) {
             let id = Base.idNumber(cardId);
-            Base.Dialogs[type].inputs.DOM[0].value = Base.Cards.children[id].description;
-            Base.Dialogs[type].inputs.DOM[1].value = Base.Cards.children[id].timeLogged;
-            Base.Dialogs[type].inputs.DOM[2].value = Base.Cards.children[id].taskName;
-            Base.Dialogs[type].inputs.DOM[3].value = Base.Cards.children[id].taskType;
+            Base.Dialogs[type].inputs.DOM['description'].value = Base.Cards.children[id].description;
+            Base.Dialogs[type].inputs.DOM['time-spent'].value = Base.Cards.children[id].timeLogged;
+            Base.Dialogs[type].inputs.DOM['task-name'].value = Base.Cards.children[id].taskName;
+            Base.Dialogs[type].inputs.DOM['task-type'].value = Base.Cards.children[id].taskType;
         }
     }
 }
@@ -877,7 +974,9 @@ let Dialog = new DialogClass;
 class Main {
     constructor() {
          // it's important to invoke Dialog.init() here
+        Dialog.noCancelListeners = true;
         Dialog.createOverlay();
+        Dialog.init(Base.Dialogs.types.cancel);
         Dialog.init(Base.Dialogs.types.logTime);
         Dialog.init(Base.Dialogs.types.cardEdit);
     }
