@@ -28,7 +28,7 @@ $dialog-padding-horizontal: 5rem;
 
 .dialog {
     position: fixed;
-    @include size(36rem, 60rem);
+    width: 36rem;
     @include flex(center, center);
     //min-width: 40vw;
     //min-height: 60vh;
@@ -36,7 +36,6 @@ $dialog-padding-horizontal: 5rem;
     //max-height: 96vh;
     padding: $dialog-padding-vertical $dialog-padding-horizontal;
     border-radius: 0.3rem;
-    background-color: #fff;
     box-shadow: 0 0 4rem rgba(0, 0, 0, 0.1), 0 0 0.5rem rgba(0, 0, 0, 0.4);
 
     form {

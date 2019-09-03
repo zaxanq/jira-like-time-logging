@@ -13,4 +13,12 @@
   .card__logged-time {
     color: map-get($accents, 400);
   }
+
+  .card__delete {
+    background-color: map-get($main, 300);
+
+    &:hover {
+      background-color: map-get($main, 500);
+    }
+  }
 }
