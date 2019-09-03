@@ -34,7 +34,7 @@ class BaseClass {
             }
         };
         this.Dialogs = {
-            types: {logTime: 'logTime', cardEdit: 'cardEdit', cancel: 'cancel'},
+            types: {logTime: 'logTime', cardEdit: 'cardEdit', cancel: 'cancel', confirmDelete: 'confirmDelete'},
             logTime: {
                 title: 'Log time',
                 className: 'dialog__log-time',
@@ -43,7 +43,9 @@ class BaseClass {
                     labels: ['Card name', 'Description', 'Task name', '', 'Time spent'],
                     DOM: {}
                 },
-                buttons: {}
+                buttons: {},
+                submitText: 'Submit',
+                cancelText: 'Cancel'
             },
             cardEdit: {
                 title: 'Edit task',
@@ -53,7 +55,9 @@ class BaseClass {
                     labels: ['Description', 'Time spent', 'Task name', ''],
                     DOM: {}
                 },
-                buttons: {}
+                buttons: {},
+                submitText: 'Edit',
+                cancelText: 'Cancel'
             },
             cancel: {
                 title: 'Cancel?',
@@ -63,7 +67,21 @@ class BaseClass {
                     labels: [],
                     DOM: {}
                 },
-                buttons: {}
+                buttons: {},
+                submitText: 'Cancel',
+                cancelText: 'Go back'
+            },
+            confirmDelete: {
+                title: 'Confirm card deletion',
+                className: 'dialog__confirm-delete',
+                inputs: {
+                    names: [],
+                    labels: [],
+                    DOM: []
+                },
+                buttons: {},
+                submitText: 'Delete',
+                cancelText: 'Cancel'
             }
         };
         this.message = {
@@ -173,7 +191,6 @@ class BaseClass {
             With a help of a Base.checkTime() method it returns a number of minutes.
          */
         let removeLastChar = (string) => string.slice(0, string.length - 1); // removes a (last) letter from a time value
-
         let [hours, minutes] = this.checkTime(string);
         return Number(removeLastChar(hours)) * 60 + Number(removeLastChar(minutes));
     }
@@ -190,12 +207,12 @@ class BaseClass {
         return hours === 0 ? `${minutes}m` : minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
     }
 
-    stringToTimeToString(string) { // shortcut method
-        return this.stringToTime(this.timeToString(string));
+    timeToStringToTime(number) { // shortcut method
+        return this.stringToTime(this.timeToString(number));
     }
 
-    timeToStringToTime(number) { // shortcut method
-        return this.timeToString(this.stringToTime(number));
+    stringToTimeToString(string) { // shortcut method
+        return this.timeToString(this.stringToTime(string));
     }
 }
 const Base = new BaseClass;
@@ -218,12 +235,12 @@ class CardClass extends HTMLElement {
                 description: Base.Dialogs[type].inputs.DOM['description'].value,
                 taskName: Base.Dialogs[type].inputs.DOM['task-name'].value,
                 taskType: Base.Dialogs[type].inputs.DOM['task-type'].value,
-                timeLogged: Dialog.DialogInputTimeSpent,
+                timeLogged: Base.stringToTimeToString(Dialog.DialogInputTimeSpent),
             };
         } else if (type === Base.Dialogs.types.cardEdit) { // otherwise it is modified
             let currentCardObject = Base.Cards.children[Base.idNumber(cardId)];
             currentCardObject.description = Base.Dialogs[type].inputs.DOM['description'].value;
-            currentCardObject.timeLogged = Dialog.DialogInputTimeSpent;
+            currentCardObject.timeLogged = Base.stringToTimeToString(Dialog.DialogInputTimeSpent);
             currentCardObject.taskName = Base.Dialogs[type].inputs.DOM['task-name'].value;
             currentCardObject.taskType = Base.Dialogs[type].inputs.DOM['task-type'].value;
         }
@@ -279,27 +296,24 @@ class CardClass extends HTMLElement {
 
         if (update.includes('title')) {
             renderPart(element, card.id, 'cardName');
-        }
-        else if (update.includes('description')) {
+        } else if (update.includes('description')) {
             renderPart(element, card.id, 'description');
-        }
-        else if (update.includes('task-icon')) {
+        } else if (update.includes('task-icon')) {
             this.resetTaskIcon(card, element);
-        }
-        else if (update.includes('task-name')) {
+        } else if (update.includes('task-name')) {
             renderPart(element, card.id, 'taskName');
-        }
-        else if (update.includes('logged-time')) {
-            element.innerText = Base.timeToStringToTime(Base.Cards.children[Base.idNumber(card.id)].timeLogged);
-        }
-        else if (update === 'update') {
+        } else if (update.includes('logged-time')) {
+            element.innerText = Base.stringToTimeToString(Base.Cards.children[Base.idNumber(card.id)].timeLogged);
+        } else if (update === 'update') {
             renderPart(Base.Dom(`#${card.id} .card__description`)[0], card.id, 'description');
             renderPart(Base.Dom(`#${card.id} .card__task-name`)[0], card.id, 'taskName');
 
             this.resetTaskIcon(card, Base.Dom(`#${card.id} .card__status-icon`)[0]);
 
             Base.Dom(`#${card.id} .card__logged-time`)[0].innerText =
-                Base.timeToStringToTime(Base.Cards.children[Base.idNumber(card.id)].timeLogged);
+                Base.stringToTimeToString(Base.Cards.children[Base.idNumber(card.id)].timeLogged);
+        } else if (update === 'delete') {
+            card.parentNode.removeChild(card);
         }
     }
 
@@ -333,6 +347,21 @@ class CardClass extends HTMLElement {
         let newCardHeaderTitle = Base.createElement('span',
             {'class': 'card__name'}, newCardHeader);
         this.renderCard(newCard, newCardHeaderTitle, 'title');
+
+        let newCardDelete = Base.createElement('div',
+            {'class': 'card__delete'}, newCardHeader);
+        let newCardDeleteSpan = Base.createElement('span',
+            {'class': 'card__delete-text'}, newCardDelete);
+        newCardDeleteSpan.innerText = '+';
+    }
+
+    delete(type, cardId) {
+        Column.getTimeLogged(Base.Cards.children[Base.idNumber(cardId)].timeLogged,
+            Dialog.state[type].openedBy, type, cardId);
+
+        delete Base.Cards.children[Base.idNumber(cardId)];
+
+        this.renderCard(Base.id(cardId), '', 'delete');
     }
 
     createCardBody(newCard) {
@@ -386,6 +415,16 @@ class CardClass extends HTMLElement {
             Dialog.open(Base.Dialogs.types.cardEdit,
                 Base.Cards.children[Base.idNumber(newCard.id)].parentId,
                 newCard.id);
+            }
+        });
+
+        Base.Dom(`#${newCard.id} .card__delete`)[0].addEventListener('mouseup', (event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            if (event.button === 0) {
+                Dialog.open(Base.Dialogs.types.confirmDelete,
+                    Base.Cards.children[Base.idNumber(newCard.id)].parentId,
+                    newCard.id);
             }
         });
     }
@@ -582,15 +621,17 @@ class ColumnClass extends HTMLElement {
             With both these values renderWorkedTime() and renderProgress() can be now executed.
          */
         let columnNo = Base.idNumber(columnId);
+        let cardNo = cardId ? Base.idNumber(cardId) : undefined;
         time = Base.stringToTime(time);
 
         if (type === Base.Dialogs.types.cardEdit) {
-            let cardNo = Base.idNumber(cardId);
             Base.Columns.children[columnNo].totalWorkedTime.number -=
                 Base.stringToTime(Base.Cards.children[cardNo].timeLogged);
 
             Card.fetchDataFromDialog(type, cardId);
             time = Base.stringToTime(Base.Cards.children[cardNo].timeLogged);
+        } else if (type === Base.Dialogs.types.confirmDelete) {
+            time = -Base.stringToTime(Base.Cards.children[cardNo].timeLogged);
         }
 
         Base.Columns.children[columnNo].totalWorkedTime.number += time;
@@ -647,7 +688,7 @@ class DialogClass extends HTMLElement {
         if (type !== Base.Dialogs.types.cancel) {
             this.state[type].openedBy = columnId;
             Base.class('dialog-overlay')[0].removeClass('dialog-overlay--hidden');
-            if (type === Base.Dialogs.types.cardEdit) this.state[type].openedCard = cardId;
+            this.state[type].openedCard = cardId;
         } else {
             Base.class('dialog-cancel-overlay')[0].removeClass('dialog-overlay--hidden');
             Base.Dom('.dialog--visible')[0].addClass('dialog--cancelable');
@@ -764,14 +805,13 @@ class DialogClass extends HTMLElement {
 
         this.dialogButtonSubmit = Base.createElement('input',
             {'class': ['dialog__button', 'button', 'dialog__button--submit']}, dialogButtons);
-        this.dialogButtonSubmit.value = type === Base.Dialogs.types.cancel ? 'Cancel' : 'Submit';
-
+        this.dialogButtonSubmit.value = Base.Dialogs[type].submitText;
         this.dialogButtonSubmit.type = 'submit';
         Base.Dialogs[type].buttons.submit = this.dialogButtonSubmit;
 
         this.dialogButtonCancel = Base.createElement('button',
             {'class': ['dialog__button', 'button', 'dialog__button--cancel']}, dialogButtons);
-        this.dialogButtonCancel.innerText = type === Base.Dialogs.types.cancel ? 'Go back' : 'Cancel';
+        this.dialogButtonCancel.innerText = Base.Dialogs[type].cancelText;
         Base.Dialogs[type].buttons.cancel = this.dialogButtonCancel;
     }
 
@@ -816,6 +856,15 @@ class DialogClass extends HTMLElement {
                 event.preventDefault();
                 if (this.state[type].opened === true && this.validation(type) === true) {
                     Card.modify(type, this.state[type].openedCard);
+                    this.close(type);
+                }
+            });
+        } else if (type === Base.Dialogs.types.confirmDelete) {
+            this.dialogForm.addEventListener('submit', event => {
+                event.stopPropagation();
+                event.preventDefault();
+                if (this.state[type].opened === true) {
+                    Card.delete(type, this.state[type].openedCard);
                     this.close(type);
                 }
             });
@@ -979,6 +1028,7 @@ class Main {
         Dialog.init(Base.Dialogs.types.cancel);
         Dialog.init(Base.Dialogs.types.logTime);
         Dialog.init(Base.Dialogs.types.cardEdit);
+        Dialog.init(Base.Dialogs.types.confirmDelete);
     }
 
     init(columnQuantity = 5) {
