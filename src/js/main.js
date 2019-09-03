@@ -29,9 +29,8 @@ class BaseClass {
         };
         this.Cards = {
             count: 0,
-            children: {
-                0: {}
-            }
+            children: {},
+            DOM: {}
         };
         this.Dialogs = {
             types: {logTime: 'logTime', cardEdit: 'cardEdit', cancel: 'cancel', confirmDelete: 'confirmDelete'},
@@ -184,15 +183,25 @@ class BaseClass {
         return [hours, minutes];
     }
 
-    stringToTime(string) {
+    getTime(string) {
+        if (string.includes('h')) return [string, ''];
+        else if (string.includes('m')) return ['', string];
+    }
+
+    removeLastChar(string) {
+        return string.slice(0, string.length - 1);
+    }
+
+    stringToTime(string, checkTime) {
         /*  Input: string
             Output: number
             Method gets a string with time value (i.e: "7h30m", "5h" "10m" "20m 4h", "1h 10m").
             With a help of a Base.checkTime() method it returns a number of minutes.
          */
-        let removeLastChar = (string) => string.slice(0, string.length - 1); // removes a (last) letter from a time value
-        let [hours, minutes] = this.checkTime(string);
-        return Number(removeLastChar(hours)) * 60 + Number(removeLastChar(minutes));
+        let hours, minutes;
+        if (checkTime) [hours, minutes] = this.checkTime(string);
+        else [hours, minutes] = this.getTime(string);
+        return Number(this.removeLastChar(hours)) * 60 + Number(this.removeLastChar(minutes));
     }
 
     timeToString(number) {
@@ -207,12 +216,12 @@ class BaseClass {
         return hours === 0 ? `${minutes}m` : minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
     }
 
-    timeToStringToTime(number) { // shortcut method
-        return this.stringToTime(this.timeToString(number));
+    timeToStringToTime(number, check) { // shortcut method
+        return this.stringToTime(this.timeToString(number), check);
     }
 
-    stringToTimeToString(string) { // shortcut method
-        return this.timeToString(this.stringToTime(string));
+    stringToTimeToString(string, check) { // shortcut method
+        return this.timeToString(this.stringToTime(string, check));
     }
 }
 const Base = new BaseClass;
@@ -230,17 +239,23 @@ class CardClass extends HTMLElement {
          */
             // if type of operation is a logTime, the object is created.
         if (type === Base.Dialogs.types.logTime) {
-            Base.Cards.children[++Base.Cards.count] = {
+            Base.Cards.children[`card-${++Base.Cards.count}`] = {
                 cardName: Base.Dialogs[type].inputs.DOM['card-name'].value,
                 description: Base.Dialogs[type].inputs.DOM['description'].value,
                 taskName: Base.Dialogs[type].inputs.DOM['task-name'].value,
                 taskType: Base.Dialogs[type].inputs.DOM['task-type'].value,
-                timeLogged: Base.stringToTimeToString(Dialog.DialogInputTimeSpent),
+                timeLogged: {
+                    number: Base.stringToTime(Dialog.DialogInputTimeSpent, true),
+                    string: Base.stringToTimeToString(Dialog.DialogInputTimeSpent, true)
+                }
             };
         } else if (type === Base.Dialogs.types.cardEdit) { // otherwise it is modified
-            let currentCardObject = Base.Cards.children[Base.idNumber(cardId)];
+            let currentCardObject = Base.Cards.children[cardId];
             currentCardObject.description = Base.Dialogs[type].inputs.DOM['description'].value;
-            currentCardObject.timeLogged = Base.stringToTimeToString(Dialog.DialogInputTimeSpent);
+            currentCardObject.timeLogged = {
+                number: Base.stringToTime(Dialog.DialogInputTimeSpent, true),
+                string: Base.stringToTimeToString(Dialog.DialogInputTimeSpent, true)
+            };
             currentCardObject.taskName = Base.Dialogs[type].inputs.DOM['task-name'].value;
             currentCardObject.taskType = Base.Dialogs[type].inputs.DOM['task-type'].value;
         }
@@ -256,10 +271,10 @@ class CardClass extends HTMLElement {
                 and this.renderCard() to update data displayed on the card.
          */
         Dialog.checkInputTimeSpent(type);
-        Column.getTimeLogged(Base.Cards.children[Base.idNumber(cardId)].timeLogged,
+        Column.getTimeLogged(Base.Cards.children[cardId].timeLogged.number,
             Dialog.state[type].openedBy, Base.Dialogs.types.cardEdit, cardId);
 
-        this.renderCard(Base.id(cardId), '', 'update');
+        this.renderCard(Base.Cards.DOM[cardId].card, '', 'update');
     }
 
     create(parentId) {
@@ -270,9 +285,11 @@ class CardClass extends HTMLElement {
             This method uses data from Elements.cards.
          */
             // Card element
+        Base.Cards.DOM[`card-${Base.Cards.count}`] = {};
         let newCard = Base.createElement('log-card',
             {'class': ['column__card', 'card'], 'id': `card-${Base.Cards.count}`},
-            Base.Dom(`#${parentId} .column__body`)[0]);
+            Base.Columns.DOM[Base.idNumber(parentId)].body);
+        Base.Cards.DOM[`card-${Base.Cards.count}`].card = newCard;
 
         this.addToElementsObject(parentId); // new card will be added to Base.Cards object.
 
@@ -291,7 +308,7 @@ class CardClass extends HTMLElement {
             Update value can also be simply a 'update' which will render all data that can be modified.
          */
         const renderPart = (element, cardId, property) => {
-            element.innerText = Base.Cards.children[Base.idNumber(cardId)][property];
+            element.innerText = Base.Cards.children[cardId][property];
         };
 
         if (update.includes('title')) {
@@ -303,15 +320,15 @@ class CardClass extends HTMLElement {
         } else if (update.includes('task-name')) {
             renderPart(element, card.id, 'taskName');
         } else if (update.includes('logged-time')) {
-            element.innerText = Base.stringToTimeToString(Base.Cards.children[Base.idNumber(card.id)].timeLogged);
+            element.innerText = Base.Cards.children[card.id].timeLogged.string;
         } else if (update === 'update') {
-            renderPart(Base.Dom(`#${card.id} .card__description`)[0], card.id, 'description');
-            renderPart(Base.Dom(`#${card.id} .card__task-name`)[0], card.id, 'taskName');
+            renderPart(Base.Cards.DOM[card.id].bodyDescription, card.id, 'description');
+            renderPart(Base.Cards.DOM[card.id].footerTaskName, card.id, 'taskName');
 
-            this.resetTaskIcon(card, Base.Dom(`#${card.id} .card__status-icon`)[0]);
+            this.resetTaskIcon(card, Base.Cards.DOM[card.id].footerTaskIcon);
 
-            Base.Dom(`#${card.id} .card__logged-time`)[0].innerText =
-                Base.stringToTimeToString(Base.Cards.children[Base.idNumber(card.id)].timeLogged);
+            Base.Cards.DOM[card.id].footerLoggedTime.innerText =
+                Base.Cards.children[card.id].timeLogged.string;
         } else if (update === 'delete') {
             card.parentNode.removeChild(card);
         }
@@ -324,7 +341,7 @@ class CardClass extends HTMLElement {
          */
         let classesToRemove = [...iconElement.classList].filter(className => className.match(/^status-icon__/g));
         if (classesToRemove.length > 0) iconElement.removeClass(classesToRemove);
-        iconElement.addClass(`status-icon__${Base.Cards.children[Base.idNumber(card.id)].taskType}`);
+        iconElement.addClass(`status-icon__${Base.Cards.children[card.id].taskType}`);
     }
 
     addToElementsObject(parentId) {
@@ -332,8 +349,8 @@ class CardClass extends HTMLElement {
             Output: -
             Method adds parent column id and card id (card number) to Elements object.
          */
-        Base.Cards.children[Base.Cards.count].parentId = parentId;
-        Base.Cards.children[Base.Cards.count].id = Base.Cards.count;
+        Base.Cards.children[`card-${Base.Cards.count}`].parentId = parentId;
+        Base.Cards.children[`card-${Base.Cards.count}`].id = Base.Cards.count;
     }
 
     createCardHeader(newCard) {
@@ -343,25 +360,29 @@ class CardClass extends HTMLElement {
          */
         let newCardHeader = Base.createElement('div',
             {'class': 'card__header'}, newCard);
+        Base.Cards.DOM[`card-${Base.Cards.count}`].header = newCardHeader;
 
         let newCardHeaderTitle = Base.createElement('span',
             {'class': 'card__name'}, newCardHeader);
         this.renderCard(newCard, newCardHeaderTitle, 'title');
+        Base.Cards.DOM[`card-${Base.Cards.count}`].headerTitle = newCardHeaderTitle;
 
         let newCardDelete = Base.createElement('div',
             {'class': 'card__delete'}, newCardHeader);
+        Base.Cards.DOM[`card-${Base.Cards.count}`].headerDelete = newCardDelete;
+
         let newCardDeleteSpan = Base.createElement('span',
             {'class': 'card__delete-text'}, newCardDelete);
         newCardDeleteSpan.innerText = '+';
     }
 
     delete(type, cardId) {
-        Column.getTimeLogged(Base.Cards.children[Base.idNumber(cardId)].timeLogged,
+        Column.getTimeLogged(Base.Cards.children[cardId].timeLogged.number,
             Dialog.state[type].openedBy, type, cardId);
 
-        delete Base.Cards.children[Base.idNumber(cardId)];
+        delete Base.Cards.children[cardId];
 
-        this.renderCard(Base.id(cardId), '', 'delete');
+        this.renderCard(Base.Cards.DOM[cardId].card, '', 'delete');
     }
 
     createCardBody(newCard) {
@@ -371,10 +392,12 @@ class CardClass extends HTMLElement {
          */
         let newCardBody = Base.createElement('div',
             {'class': 'card__body'}, newCard);
+        Base.Cards.DOM[`card-${Base.Cards.count}`].body = newCardBody;
 
         let newCardBodyDescription = Base.createElement('span',
             {'class': 'card__description'}, newCardBody);
         this.renderCard(newCard, newCardBodyDescription, 'description');
+        Base.Cards.DOM[`card-${Base.Cards.count}`].bodyDescription = newCardBodyDescription;
     }
 
     createCardFooter(newCard) {
@@ -384,23 +407,27 @@ class CardClass extends HTMLElement {
          */
         let newCardFooter = Base.createElement('div',
             {'class': 'card__footer'}, newCard);
+        Base.Cards.DOM[`card-${Base.Cards.count}`].footer = newCardFooter;
 
         let newCardFooterTask = Base.createElement('div',
             {'class': 'card__task'}, newCardFooter);
+        Base.Cards.DOM[`card-${Base.Cards.count}`].footerTask = newCardFooterTask;
 
         let newCardFooterTaskIcon = Base.createElement('i',
             {'class': ['card__status-icon', 'status-icon']}, newCardFooterTask);
         this.renderCard(newCard, newCardFooterTaskIcon, 'task-icon');
-
+        Base.Cards.DOM[`card-${Base.Cards.count}`].footerTaskIcon = newCardFooterTaskIcon;
 
         let newCardFooterTaskName = Base.createElement('span',
             {'class': 'card__task-name'}, newCardFooterTask);
-        newCardFooterTaskName.innerText = Base.Cards.children[Base.Cards.count].taskName;
+        newCardFooterTaskName.innerText = Base.Cards.children[`card-${Base.Cards.count}`].taskName;
         this.renderCard(newCard, newCardFooterTaskName, 'task-name');
+        Base.Cards.DOM[`card-${Base.Cards.count}`].footerTaskName = newCardFooterTaskName;
 
         let newCardFooterLoggedTime = Base.createElement('span',
             {'class': 'card__logged-time'}, newCardFooter);
         this.renderCard(newCard, newCardFooterLoggedTime, 'logged-time');
+        Base.Cards.DOM[`card-${Base.Cards.count}`].footerLoggedTime = newCardFooterLoggedTime;
     }
 
     addListener(newCard) {
@@ -412,19 +439,15 @@ class CardClass extends HTMLElement {
             event.stopPropagation();
             if (event.button === 0) { // left mouse button only
             Dialog.fetchDataFromCard(Base.Dialogs.types.cardEdit, newCard.id);
-            Dialog.open(Base.Dialogs.types.cardEdit,
-                Base.Cards.children[Base.idNumber(newCard.id)].parentId,
-                newCard.id);
+            Dialog.open(Base.Dialogs.types.cardEdit, Base.Cards.children[newCard.id].parentId, newCard.id);
             }
         });
 
-        Base.Dom(`#${newCard.id} .card__delete`)[0].addEventListener('mouseup', (event) => {
+        Base.Cards.DOM[newCard.id].headerDelete.addEventListener('mouseup', (event) => {
             event.stopPropagation();
             event.preventDefault();
             if (event.button === 0) {
-                Dialog.open(Base.Dialogs.types.confirmDelete,
-                    Base.Cards.children[Base.idNumber(newCard.id)].parentId,
-                    newCard.id);
+                Dialog.open(Base.Dialogs.types.confirmDelete, Base.Cards.children[newCard.id].parentId, newCard.id);
             }
         });
     }
@@ -581,6 +604,7 @@ class ColumnClass extends HTMLElement {
          */
         let newColumnBody = Base.createElement('div',
             {'class': 'column__body'}, newColumn);
+        Base.Columns.DOM[Base.Columns.count].body = newColumnBody;
     }
 
     createColumnFooter(newColumn) {
@@ -621,19 +645,14 @@ class ColumnClass extends HTMLElement {
             With both these values renderWorkedTime() and renderProgress() can be now executed.
          */
         let columnNo = Base.idNumber(columnId);
-        let cardNo = cardId ? Base.idNumber(cardId) : undefined;
-        time = Base.stringToTime(time);
 
         if (type === Base.Dialogs.types.cardEdit) {
-            Base.Columns.children[columnNo].totalWorkedTime.number -=
-                Base.stringToTime(Base.Cards.children[cardNo].timeLogged);
-
+            Base.Columns.children[columnNo].totalWorkedTime.number -= time;
             Card.fetchDataFromDialog(type, cardId);
-            time = Base.stringToTime(Base.Cards.children[cardNo].timeLogged);
+            time = Base.Cards.children[cardId].timeLogged.number;
         } else if (type === Base.Dialogs.types.confirmDelete) {
-            time = -Base.stringToTime(Base.Cards.children[cardNo].timeLogged);
+            time = -time;
         }
-
         Base.Columns.children[columnNo].totalWorkedTime.number += time;
         Base.Columns.children[columnNo].totalWorkedTime.string =
             Base.timeToString(Base.Columns.children[columnNo].totalWorkedTime.number);
@@ -838,7 +857,7 @@ class DialogClass extends HTMLElement {
                 event.preventDefault();
                 if (this.state[type].opened === true && this.validation(type) === true) {
                     Card.fetchDataFromDialog(type);
-                    Column.getTimeLogged(Base.Cards.children[Base.Cards.count].timeLogged,
+                    Column.getTimeLogged(Base.Cards.children[`card-${Base.Cards.count}`].timeLogged.number,
                         this.state[type].openedBy, type);
                     Card.create(this.state[type].openedBy);
                     this.close(type);
@@ -936,8 +955,9 @@ class DialogClass extends HTMLElement {
          */
         if (type === Base.Dialogs.types.logTime) {
             for (let input of Object.values(Base.Dialogs[type].inputs.DOM)) {
-                if (!this.checkInput(input, type).result) {
-                    this.addInvalidInputState(input, this.checkInput(input, type).reason);
+                let checkInput = this.checkInput(input, type);
+                if (!checkInput.result) {
+                    this.addInvalidInputState(input, checkInput.reason);
                     return false;
                 }
             }
@@ -998,7 +1018,7 @@ class DialogClass extends HTMLElement {
 
         if (this.DialogInputTimeSpent) { // if such time value exists
             this.DialogInputTimeSpent = this.DialogInputTimeSpent.filter(
-                (value) => Base.stringToTime(value) > 0); // filter out everything "bigger" than "0m" or "0h"
+                (value) => Base.stringToTime(value, false) > 0); // filter out everything "bigger" than "0m" or "0h"
 
                 // execute checkTime() to get first hours and minutes values and then join it into a string
             this.DialogInputTimeSpent = Base.checkTime(this.DialogInputTimeSpent.join('')).join(' ');
@@ -1009,11 +1029,10 @@ class DialogClass extends HTMLElement {
 
     fetchDataFromCard(type, cardId) {
         if (type === Base.Dialogs.types.cardEdit) {
-            let id = Base.idNumber(cardId);
-            Base.Dialogs[type].inputs.DOM['description'].value = Base.Cards.children[id].description;
-            Base.Dialogs[type].inputs.DOM['time-spent'].value = Base.Cards.children[id].timeLogged;
-            Base.Dialogs[type].inputs.DOM['task-name'].value = Base.Cards.children[id].taskName;
-            Base.Dialogs[type].inputs.DOM['task-type'].value = Base.Cards.children[id].taskType;
+            Base.Dialogs[type].inputs.DOM['description'].value = Base.Cards.children[cardId].description;
+            Base.Dialogs[type].inputs.DOM['time-spent'].value = Base.Cards.children[cardId].timeLogged.string;
+            Base.Dialogs[type].inputs.DOM['task-name'].value = Base.Cards.children[cardId].taskName;
+            Base.Dialogs[type].inputs.DOM['task-type'].value = Base.Cards.children[cardId].taskType;
         }
     }
 }
