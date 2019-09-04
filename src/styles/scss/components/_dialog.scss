@@ -68,6 +68,10 @@ $dialog-padding-horizontal: 5rem;
 
 .dialog__input-container {
     margin-bottom: 3rem;
+
+    > textarea {
+        resize: none;
+    }
 }
 
 .dialog--hidden {

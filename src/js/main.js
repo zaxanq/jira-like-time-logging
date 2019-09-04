@@ -81,7 +81,15 @@ class BaseClass {
                 buttons: {},
                 submitText: 'Delete',
                 cancelText: 'Cancel'
-            }
+            },
+            inputs: {
+                maxLengths: {
+                    'card-name': 50,
+                    'description': 90,
+                    'task-name': 16,
+                    'time-spent': 16,
+                },
+            },
         };
         this.message = {
             warning: {
@@ -787,6 +795,7 @@ class DialogClass extends HTMLElement {
             if (Inputs.names[i] === 'description') {
                 dialogInput = Base.createElement('textarea',
                     {'class': ['dialog__input', 'input', `input__${Inputs.names[i]}`]}, dialogInputContainer);
+                dialogInput.maxLength = Base.Dialogs.inputs.maxLengths[Inputs.names[i]];
             } else if (Inputs.names[i] === 'task-type') {
                 dialogInput = Base.createElement('select',
                     {'class': ['dialog__input', 'input', 'select', `input__${Inputs.names[i]}`]}, dialogInputContainer);
@@ -801,6 +810,7 @@ class DialogClass extends HTMLElement {
                 dialogInput = Base.createElement('input',
                     {'class': ['dialog__input', 'input', `input__${Inputs.names[i]}`]}, dialogInputContainer);
                 dialogInput.type = 'text';
+                dialogInput.maxLength = Base.Dialogs.inputs.maxLengths[Inputs.names[i]];
             }
             Base.Dialogs[type].inputs.DOM[Inputs.names[i]] = dialogInput;
 
