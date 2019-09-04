@@ -20,6 +20,7 @@ log-card {
 
 .card__name {
   font-weight: 500;
+  word-break: break-word;
 }
 
 .card__body {
@@ -27,8 +28,12 @@ log-card {
 }
 
 .card__description {
+  display: inline-block;
   width: inherit;
+  max-height: 15rem;
+  overflow: hidden;
   font-size: 1.4rem;
+  word-break: break-word;
 }
 
 .card__footer {
@@ -48,6 +53,8 @@ log-card {
 .card__task-name {
   margin-left: 0.5rem;
   font-size: 1.4rem;
+  max-width: 12rem;
+  @include ellipsis();
 }
 
 .card__logged-time {
