@@ -87,7 +87,7 @@ class BaseClass {
                     'card-name': 50,
                     'description': 90,
                     'task-name': 16,
-                    'time-spent': 16,
+                    'time-spent': 32,
                 },
             },
         };
@@ -179,37 +179,30 @@ class BaseClass {
          */
         let regExp = /([0-9]{1,2}h|[0-9]{1,3}m)/g;
         let timeValues = string.match(regExp);
-        let hours = '',
-            minutes = '';
+        let hours = 0,
+            minutes = 0;
 
         for (let i = 0; i < timeValues.length; i++) {
-            if (hours && minutes) break;
-            if (timeValues[i].includes('h') && !hours) hours = timeValues[i];
-            else if (timeValues[i].includes('m') && !minutes) minutes = timeValues[i];
+            if (timeValues[i].includes('h')) hours += Number(this.removeLastChar(timeValues[i]));
+            else if (timeValues[i].includes('m')) minutes += Number(this.removeLastChar(timeValues[i]));
         }
 
         return [hours, minutes];
-    }
-
-    getTime(string) {
-        if (string.includes('h')) return [string, ''];
-        else if (string.includes('m')) return ['', string];
     }
 
     removeLastChar(string) {
         return string.slice(0, string.length - 1);
     }
 
-    stringToTime(string, checkTime) {
+    stringToTime(string) {
         /*  Input: string
             Output: number
             Method gets a string with time value (i.e: "7h30m", "5h" "10m" "20m 4h", "1h 10m").
             With a help of a Base.checkTime() method it returns a number of minutes.
          */
         let hours, minutes;
-        if (checkTime) [hours, minutes] = this.checkTime(string);
-        else [hours, minutes] = this.getTime(string);
-        return Number(this.removeLastChar(hours)) * 60 + Number(this.removeLastChar(minutes));
+        [hours, minutes] = this.checkTime(string);
+        return Number(hours) * 60 + Number(minutes);
     }
 
     timeToString(number) {
@@ -224,12 +217,12 @@ class BaseClass {
         return hours === 0 ? `${minutes}m` : minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
     }
 
-    timeToStringToTime(number, check) { // shortcut method
-        return this.stringToTime(this.timeToString(number), check);
+    timeToStringToTime(number) { // shortcut method
+        return this.stringToTime(this.timeToString(number));
     }
 
-    stringToTimeToString(string, check) { // shortcut method
-        return this.timeToString(this.stringToTime(string, check));
+    stringToTimeToString(string) { // shortcut method
+        return this.timeToString(this.stringToTime(string));
     }
 }
 const Base = new BaseClass;
@@ -253,16 +246,16 @@ class CardClass extends HTMLElement {
                 taskName: Base.Dialogs[type].inputs.DOM['task-name'].value,
                 taskType: Base.Dialogs[type].inputs.DOM['task-type'].value,
                 timeLogged: {
-                    number: Base.stringToTime(Dialog.DialogInputTimeSpent, true),
-                    string: Base.stringToTimeToString(Dialog.DialogInputTimeSpent, true)
+                    number: Base.stringToTime(Dialog.DialogInputTimeSpent),
+                    string: Base.stringToTimeToString(Dialog.DialogInputTimeSpent)
                 }
             };
         } else if (type === Base.Dialogs.types.cardEdit) { // otherwise it is modified
             let currentCardObject = Base.Cards.children[cardId];
             currentCardObject.description = Base.Dialogs[type].inputs.DOM['description'].value;
             currentCardObject.timeLogged = {
-                number: Base.stringToTime(Dialog.DialogInputTimeSpent, true),
-                string: Base.stringToTimeToString(Dialog.DialogInputTimeSpent, true)
+                number: Base.stringToTime(Dialog.DialogInputTimeSpent),
+                string: Base.stringToTimeToString(Dialog.DialogInputTimeSpent)
             };
             currentCardObject.taskName = Base.Dialogs[type].inputs.DOM['task-name'].value;
             currentCardObject.taskType = Base.Dialogs[type].inputs.DOM['task-type'].value;
@@ -1020,18 +1013,16 @@ class DialogClass extends HTMLElement {
         let regExp = /([0-9]{1,2}h|[0-9]{1,3}m)/g;
 
         // get all time values (i.e "30m", "5h", "4h20m", "5h 50m", "50m1h", "40m 4h")
-        if (type === Base.Dialogs.types.logTime) {
-            this.DialogInputTimeSpent = Base.Dialogs[type].inputs.DOM['time-spent'].value.match(regExp);
-        } else if (type === Base.Dialogs.types.cardEdit) {
+        if (type === Base.Dialogs.types.logTime || type === Base.Dialogs.types.cardEdit) {
             this.DialogInputTimeSpent = Base.Dialogs[type].inputs.DOM['time-spent'].value.match(regExp);
         }
 
         if (this.DialogInputTimeSpent) { // if such time value exists
             this.DialogInputTimeSpent = this.DialogInputTimeSpent.filter(
-                (value) => Base.stringToTime(value, false) > 0); // filter out everything "bigger" than "0m" or "0h"
+                (value) => Base.stringToTime(value) > 0); // filter out everything "bigger" than "0m" or "0h"
 
                 // execute checkTime() to get first hours and minutes values and then join it into a string
-            this.DialogInputTimeSpent = Base.checkTime(this.DialogInputTimeSpent.join('')).join(' ');
+            this.DialogInputTimeSpent = this.DialogInputTimeSpent.join(' ');
             return {result: true, reason: ''};
         }
         return {result: false, reason: 'invalidValue'}; // if no valid time values were given
