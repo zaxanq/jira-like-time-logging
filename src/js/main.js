@@ -834,6 +834,7 @@ class DialogClass extends HTMLElement {
         this.dialogButtonCancel = Base.createElement('button',
             {'class': ['dialog__button', 'button', 'dialog__button--cancel']}, dialogButtons);
         this.dialogButtonCancel.innerText = Base.Dialogs[type].cancelText;
+        this.dialogButtonCancel.type = 'button';
         Base.Dialogs[type].buttons.cancel = this.dialogButtonCancel;
     }
 
@@ -866,12 +867,6 @@ class DialogClass extends HTMLElement {
                     this.close(type);
                 }
             });
-
-            Object.values(Base.Dialogs[type].inputs.DOM).forEach(input => {
-                input.addEventListener('input', () => {
-                    this.clearInvalidInputState(input);
-                });
-            });
         } else if (type === Base.Dialogs.types.cardEdit) {
             this.dialogForm.addEventListener('submit', event => {
                 event.stopPropagation();
@@ -881,6 +876,7 @@ class DialogClass extends HTMLElement {
                     this.close(type);
                 }
             });
+
         } else if (type === Base.Dialogs.types.confirmDelete) {
             this.dialogForm.addEventListener('submit', event => {
                 event.stopPropagation();
@@ -890,40 +886,56 @@ class DialogClass extends HTMLElement {
                     this.close(type);
                 }
             });
-        }
-        if (type === Base.Dialogs.types.cancel) {
+        } else if (type === Base.Dialogs.types.cancel) {
             this.dialogForm.addEventListener('submit', event => {
                 event.stopPropagation();
                 event.preventDefault();
-                this.cancelDialogs();
-            });
-
-            this.dialogButtonCancel.addEventListener('mouseup', event => {
-                event.stopPropagation();
-                event.preventDefault();
-                if (event.button === 0) { // left mouse button only
-                    this.close(type);
+                if (this.state[type].opened === true) {
+                    this.cancelDialogs();
                 }
             });
 
             this.dialogCancelOverlay.addEventListener('mouseup', event => {
                 event.stopPropagation();
             });
-        } else {
-            if (this.noCancelListeners) {
-                [this.dialogButtonCancel, this.dialogOverlay].map(element => element.addEventListener('mouseup', event => {
-                    event.stopPropagation();
-                    if (this.state[type].opened === true) {
-                        if (event.button === 0) { // left mouse button only
-                            if (Dialog.areInputsEmpty(type)) this.close(type);
-                            else this.confirm('cancel', type);
-                        }
-                    }
-                }));
-                this.noCancelListeners = false;
+        }
+        this.dialogOverlay.addEventListener('mouseup', event => {
+            event.stopPropagation();
+            if (this.state[type].opened === true) {
+                if (event.button === 0) { // left mouse button only
+                    if (Dialog.areInputsEmpty(type)) this.close(type);
+                    else this.confirm('cancel', type);
+                }
             }
+        });
+        if (type === Base.Dialogs.types.logTime || type === Base.Dialogs.types.cardEdit) {
+            Object.values(Base.Dialogs[type].inputs.DOM).forEach(input => {
+                input.addEventListener('input', () => {
+                    this.clearInvalidInputState(input);
+                });
+            });
         }
 
+        if (type === Base.Dialogs.types.cancel) {
+            this.dialogButtonCancel.addEventListener('mouseup', event => {
+                event.stopPropagation();
+                if (this.state[type].opened === true) {
+                    if (event.button === 0) { // left mouse button only
+                        this.close(type);
+                    }
+                }
+            });
+        } else {
+            this.dialogButtonCancel.addEventListener('mouseup', event => {
+                event.stopPropagation();
+                if (this.state[type].opened === true) {
+                    if (event.button === 0) { // left mouse button only
+                        if (Dialog.areInputsEmpty(type)) this.close(type);
+                        else this.confirm('cancel', type);
+                    }
+                }
+            });
+        }
         this.dialog.addEventListener('mouseup', event => {
             event.stopPropagation();
         });
@@ -956,7 +968,7 @@ class DialogClass extends HTMLElement {
                 addInvalidInputState() is executed to mark the input as invalid.
             This method is executed when Dialog Form is submitted.
          */
-        if (type === Base.Dialogs.types.logTime) {
+        if (type === Base.Dialogs.types.logTime || type === Base.Dialogs.types.cardEdit) {
             for (let input of Object.values(Base.Dialogs[type].inputs.DOM)) {
                 let checkInput = this.checkInput(input, type);
                 if (!checkInput.result) {
