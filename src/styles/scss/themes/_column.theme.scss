@@ -1,6 +1,7 @@
 @mixin column-theme($main, $dark, $accents, $error) {
   $column-bg: map-get($main, 100);
   $column-hover-bg: map-get($main, 200);
+  $progress-color: map-get($accents, 400);
   background-color: $column-bg;
   border-color: map-get($main, 500);
 
@@ -25,7 +26,7 @@
   }
 
   .column__progress--done {
-    background-color: map-get($accents, 400);
+    background-color: $progress-color;
   }
 
   .column__title {
@@ -57,4 +58,20 @@
       color: map-get($main, 1200);
     }
   }
+
+  .column__remove-tasks,
+  .column__button-deselect,
+  .column__button-select-all {
+    background-color: map-get($main, 100);
+    border-color: $progress-color;
+
+    &:hover {
+      background-color: map-get($accents, 10);
+    }
+  }
+
+  .column__remove-tasks-span {
+    color: map-get($error, 500);
+  }
+
 }
