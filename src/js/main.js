@@ -19,15 +19,9 @@ class BaseClass {
         this.Main = this.Dom('main.wrapper')[0];
         this.Columns = {
             count: 0,
-            children: {
-                0: {}
-            },
-            DOM: {
-                0: {}
-            },
-            cards: {
-                0: {}
-            },
+            children: {},
+            DOM: {},
+            cards: {},
             dayNames: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] // displayed in Column head
         };
         this.Cards = {
@@ -108,37 +102,26 @@ class BaseClass {
 
     init() {
         Element.prototype.addClass = function(className) {
-            if (typeof className === 'string') {
-                this.classList.add(className);
-            } else if (typeof className === 'object') {
-                if (className.length) { // checking if it's an array
-                    className.forEach((name) => this.classList.add(name));
-                } else {
-                    console.error(Base.message.error.invalidClassName);
-                }
+            if (typeof className === 'string') this.classList.add(className);
+            else if (typeof className === 'object') {
+                if (className.length) className.forEach((name) => this.classList.add(name));
+                else console.error(Base.message.error.invalidClassName);
             }
             return this;
         };
 
         Element.prototype.removeClass = function(className) {
-            if (typeof className === 'string') {
-                this.classList.remove(className);
-            } else if (typeof className === 'object') {
-                if (className.length) { // checking if it's an array
-                    className.forEach((name) => this.classList.remove(name));
-                } else {
-                    console.error(Base.message.error.invalidClassName);
-                }
+            if (typeof className === 'string') this.classList.remove(className);
+            else if (typeof className === 'object') {
+                if (className.length) className.forEach((name) => this.classList.remove(name));
+                else console.error(Base.message.error.invalidClassName);
             }
             return this;
         };
 
         Element.prototype.toggleClass = function(className) {
-            if (typeof className === 'string') {
-                this.classList.toggle(className);
-            } else if (typeof className === 'object') {
-                console.error(Base.message.error.invalidClassName);
-            }
+            if (typeof className === 'string') this.classList.toggle(className);
+            else if (typeof className === 'object') console.error(Base.message.error.invalidClassName);
             return this;
         };
     }
@@ -174,11 +157,12 @@ class BaseClass {
     }
 
     fixDate(number) {
-        /*  Method adds a '0' to the beginning of number if it's smaller than 10. It return it as a string.
+        /*  Input: number
+            Output: string / number
+            Method adds a '0' to the beginning of number if it's smaller than 10. It return it as a string.
             If no '0' was added, method returns inputted number (as a number).
          */
-        if (number < 10) return `0${number}`;
-        return number;
+        return number < 10 ? `0${number}` : number;
     }
 
     checkTime(string) {
@@ -212,8 +196,7 @@ class BaseClass {
             Method gets a string with time value (i.e: "7h30m", "5h" "10m" "20m 4h", "1h 10m").
             With a help of a Base.checkTime() method it returns a number of minutes.
          */
-        let hours, minutes;
-        [hours, minutes] = this.checkTime(string);
+        let [hours, minutes] = this.checkTime(string);
         return Number(hours) * 60 + Number(minutes);
     }
 
@@ -329,9 +312,7 @@ class CardClass extends HTMLElement {
             Method renders chosen part of card to be updated (depending on update value).
             Update value can also be simply a 'update' which will render all data that can be modified.
          */
-        const renderPart = (element, cardId, property) => {
-            element.innerText = Base.Cards.children[cardId][property];
-        };
+        const renderPart = (element, cardId, property) => { element.innerText = Base.Cards.children[cardId][property] };
 
         if (update.includes('title')) {
             renderPart(element, card.id, 'cardName');
@@ -385,22 +366,17 @@ class CardClass extends HTMLElement {
             Output: -
             Creates a Card header and everything that it should contain (card name, card delete button).
          */
-        let newCardHeader = Base.createElement('div',
-            {'class': 'card__header'}, newCard);
+        let newCardHeader = Base.createElement('div',{'class': 'card__header'}, newCard);
         Base.Cards.DOM[`card-${Base.Cards.count}`].header = newCardHeader;
 
-        let newCardHeaderTitle = Base.createElement('span',
-            {'class': 'card__name'}, newCardHeader);
+        let newCardHeaderTitle = Base.createElement('span',{'class': 'card__name'}, newCardHeader);
         this.renderCard(newCard, newCardHeaderTitle, 'title');
         Base.Cards.DOM[`card-${Base.Cards.count}`].headerTitle = newCardHeaderTitle;
 
-        let newCardDelete = Base.createElement('div',
-            {'class': 'card__delete'}, newCardHeader);
+        let newCardDelete = Base.createElement('div',{'class': 'card__delete'}, newCardHeader);
         Base.Cards.DOM[`card-${Base.Cards.count}`].headerDelete = newCardDelete;
 
-        let newCardDeleteSpan = Base.createElement('span',
-            {'class': 'card__delete-text'}, newCardDelete);
-        newCardDeleteSpan.innerText = '+';
+        Base.createElement('span',{'class': 'card__delete-text'}, newCardDelete).innerText = '+';
     }
 
     delete(type, cardId, columnId) {
@@ -472,7 +448,6 @@ class CardClass extends HTMLElement {
             Method also executes renderCard to turn on and off card styles depending on the "selected" state.
          */
         this.state[cardNo].selected = forced ? select : !this.state[cardNo].selected;
-
         this.renderCard(Base.Cards.DOM[`card-${cardNo}`].card, '', 'selected');
     }
 
@@ -552,7 +527,6 @@ class ColumnClass extends HTMLElement {
         for (let i = 0; i < quantity - weekLength; i++) { // add future days from next month
             week.push(Base.fixDate(this.nextMonth[i]) + '.' + Base.fixDate(this.now.getMonth() + 2));
         }
-
         return week;
     }
 
@@ -644,10 +618,8 @@ class ColumnClass extends HTMLElement {
         let newColumnHeadProgress = Base.createElement('div',
             {'class': 'column__progress'}, newColumnHead);
 
-        let newColumnHeadProgressDone = Base.createElement('div',
-            {'class': 'column__progress--done',
+        Base.Columns.DOM[Base.Columns.count].progress = Base.createElement('div',{'class': 'column__progress--done',
                 'id': `column-${Base.Columns.count}__progress--done`}, newColumnHeadProgress);
-        Base.Columns.DOM[Base.Columns.count].progress = newColumnHeadProgressDone;
 
         let newColumnHeadTitle = Base.createElement('h2',
             {'class': 'column__title'}, newColumnHead);
@@ -666,9 +638,7 @@ class ColumnClass extends HTMLElement {
             {'class': 'column__remove-tasks'}, newColumnHeadDeleteControls);
         Base.Columns.DOM[Base.Columns.count].removeTasks = newColumnHeadRemoveTasks;
 
-        let newColumnHeadRemoveTasksSpan = Base.createElement('span',
-            {'class': 'column__remove-tasks-span'}, newColumnHeadRemoveTasks);
-        newColumnHeadRemoveTasksSpan.innerText = '+';
+        Base.createElement('span',{'class': 'column__remove-tasks-span'}, newColumnHeadRemoveTasks).innerText = '+';
 
         let newColumnHeadSelectAll = Base.createElement('div',
             {'class': 'column__button-select-all'}, newColumnHeadDeleteControls);
@@ -681,9 +651,7 @@ class ColumnClass extends HTMLElement {
             Output: -
             Creates a Column body, which will be a container for the Cards.
          */
-        let newColumnBody = Base.createElement('div',
-            {'class': 'column__body'}, newColumn);
-        Base.Columns.DOM[Base.Columns.count].body = newColumnBody;
+        Base.Columns.DOM[Base.Columns.count].body = Base.createElement('div',{'class': 'column__body'}, newColumn);
     }
 
     createColumnFooter(newColumn) {
@@ -691,11 +659,9 @@ class ColumnClass extends HTMLElement {
             Output: -
             Creates a Column footer and Column buttons.
          */
-        let newColumnFooter = Base.createElement('div',
-            {'class': 'column__footer'}, newColumn);
+        let newColumnFooter = Base.createElement('div',{'class': 'column__footer'}, newColumn);
 
-        let newColumnButtons = Base.createElement('div',
-            {'class': 'column__buttons'}, newColumnFooter);
+        let newColumnButtons = Base.createElement('div',{'class': 'column__buttons'}, newColumnFooter);
 
         let newColumnButtonAdd = Base.createElement('button',
             {'class': ['buttons__add-task', 'button', 'column__button']}, newColumnButtons);
@@ -711,19 +677,18 @@ class ColumnClass extends HTMLElement {
             Output: -
             Adds an EventListener to Column buttons.
          */
+        let columnNo = Base.idNumber(columnId);
             // button will open a Dialog and if the Dialog.open() returns true, it will create a Card.
         Base.Columns.DOM[Base.Columns.count].buttonAdd.addEventListener('click', (event) => {
             event.stopPropagation();
-            if (!this.state[Base.idNumber(columnId)].cardSelection) {
-                if (Dialog.open(Base.Dialogs.types.logTime, columnId))
-                    Card.create(Base.Columns.count);
+            if (!this.state[columnNo].cardSelection) {
+                if (Dialog.open(Base.Dialogs.types.logTime, columnId)) Card.create(Base.Columns.count);
             }
         });
 
             // button will set the "cardSelection" Column state to true and "selectable" Card state to true
         Base.Columns.DOM[Base.Columns.count].buttonRemove.addEventListener('click', (event) => {
             event.stopPropagation();
-            let columnNo = Base.idNumber(columnId);
             if (this.containsCards(columnNo)) {
                     // if "cardSelection" state is true, clear all "selected" and "selectable" states
                 if (this.state[columnNo].cardSelection) this.toggleSelectable(columnNo, true);
@@ -736,7 +701,6 @@ class ColumnClass extends HTMLElement {
         Base.Columns.DOM[Base.Columns.count].removeTasks.addEventListener('mouseup', (event) => {
             event.stopPropagation();
             if (event.button === 0) {
-                let columnNo = Base.idNumber(columnId);
                 for (let cardNo of Object.keys(Base.Columns.cards[columnNo])) {
                     if (Card.state[cardNo].selected)
                         Card.delete(Base.Dialogs.types.confirmDelete, `card-${cardNo}`, columnId);
@@ -748,13 +712,13 @@ class ColumnClass extends HTMLElement {
             // button will change "selected" Card state to true to all the Cards in the Column
         Base.Columns.DOM[Base.Columns.count].selectAll.addEventListener('mouseup', (event) => {
             event.stopPropagation();
-            if (event.button === 0) this.selectAll(Base.idNumber(columnId));
+            if (event.button === 0) this.selectAll(columnNo);
         });
 
             // button will change "selected" Card state to false to all the Cards in the Column
         Base.Columns.DOM[Base.Columns.count].deselect.addEventListener('mouseup', (event) => {
             event.stopPropagation();
-            if (event.button === 0) this.deselect(Base.idNumber(columnId));
+            if (event.button === 0) this.deselect(columnNo);
         });
     }
 
@@ -774,14 +738,12 @@ class ColumnClass extends HTMLElement {
          */
         this.state[columnNo].cardSelection = !this.state[columnNo].cardSelection;
         Base.Columns.DOM[columnNo].deleteControls.toggleClass('column__delete-controls--visible');
-
         Base.Columns.DOM[columnNo].buttonAdd.toggleClass('column__add-task--disabled');
 
         for (let cardNo of Object.keys(Base.Columns.cards[columnNo])) {
             Card.state[cardNo].selectable = !Card.state[cardNo].selectable;
 
             if (clear && Card.state[cardNo].selected) Card.select(cardNo);
-
             Card.renderCard(Base.Cards.DOM[`card-${cardNo}`].card, '', 'selectable');
         }
     }
@@ -946,7 +908,7 @@ class DialogClass extends HTMLElement {
             {'class': 'dialog__body'}, this.dialogForm);
 
         let Inputs = Base.Dialogs[type].inputs;
-        for (let i = 0; i < Inputs.names.length; i++) { // create Inputs specifed in Dialogs.inputs
+        for (let i = 0; i < Inputs.names.length; i++) { // create Inputs specified in Dialogs.inputs
             let dialogInput;
             let dialogInputContainer = Base.createElement('div',
                 {'class': ['dialog__input-container', 'input-container', `input-container__${Inputs.names[i]}`]},
@@ -980,8 +942,7 @@ class DialogClass extends HTMLElement {
                 {'class': ['dialog__input-label', 'input-label', `input-label__${Inputs.names[i]}`]},
                 dialogInputContainer);
 
-            let dialogInputWarningContainer = Base.createElement('span',
-                {'class': ['dialog__input-warning', 'input-warning']}, dialogInputContainer);
+            Base.createElement('span',{'class': ['dialog__input-warning', 'input-warning']}, dialogInputContainer);
 
             dialogInput.name = `input__${Inputs.names[i]}`;
             dialogInput.placeholder = ' ';
@@ -989,11 +950,9 @@ class DialogClass extends HTMLElement {
             dialogInput.minLength = 1;
         }
 
-        let dialogFooter = Base.createElement('div',
-            {'class': 'dialog__footer'}, this.dialogForm);
+        let dialogFooter = Base.createElement('div',{'class': 'dialog__footer'}, this.dialogForm);
 
-        let dialogButtons = Base.createElement('div',
-            {'class': 'dialog__buttons'}, dialogFooter);
+        let dialogButtons = Base.createElement('div',{'class': 'dialog__buttons'}, dialogFooter);
 
         this.dialogButtonSubmit = Base.createElement('input',
             {'class': ['dialog__button', 'button', 'dialog__button--submit']}, dialogButtons);
@@ -1069,9 +1028,7 @@ class DialogClass extends HTMLElement {
             this.dialogForm.addEventListener('submit', event => { // submit on Confirm Cancel
                 event.stopPropagation();
                 event.preventDefault();
-                if (this.state[type].opened === true) {
-                    this.cancelDialogs();
-                }
+                if (this.state[type].opened === true) this.cancelDialogs();
             });
 
             this.dialogCancelOverlay.addEventListener('mouseup', event => { // stop actions on DialogCancelOverlay click
@@ -1099,9 +1056,7 @@ class DialogClass extends HTMLElement {
             this.dialogButtonCancel.addEventListener('mouseup', event => { // cancel on Confirm Cancel (just close)
                 event.stopPropagation();
                 if (this.state[type].opened === true) {
-                    if (event.button === 0) { // left mouse button only
-                        this.close(type);
-                    }
+                    if (event.button === 0) this.close(type);
                 }
             });
         } else {
@@ -1126,7 +1081,7 @@ class DialogClass extends HTMLElement {
             Removes class marking the input as invalid and removes the warning below this input.
             This method is executed when user inputs any value into the input.
          */
-        input.classList.remove('dialog__input--invalid');
+        input.removeClass('dialog__input--invalid');
         input.parentNode.lastElementChild.innerText = '';
     }
 
@@ -1192,7 +1147,6 @@ class DialogClass extends HTMLElement {
             Checks if Dialog TaskName input contains value in format XXX-YYY.. where X is a letter and Y is a digit.
          */
         let regExp = /^([a-zA-Z]{3}-[0-9]*)$/g;
-
         this.DialogInputTaskName = Base.Dialogs[type].inputs.DOM['task-name'].value.match(regExp);
 
         if (this.DialogInputTaskName) return {result: true, reason: ''};
@@ -1205,18 +1159,11 @@ class DialogClass extends HTMLElement {
             Checks if Dialog TimeSpent input contains valid time values.
          */
         let regExp = /([0-9]{1,2}h|[0-9]{1,3}m)/g;
-
-        // get all time values (i.e "30m", "5h", "4h20m", "5h 50m", "50m1h", "40m 4h")
+            // get all time values (i.e "30m", "5h", "4h20m", "5h 50m", "50m1h", "40m 4h")
         if (type === Base.Dialogs.types.logTime || type === Base.Dialogs.types.cardEdit) {
-            this.DialogInputTimeSpent = Base.Dialogs[type].inputs.DOM['time-spent'].value.match(regExp);
-        }
-
-        if (this.DialogInputTimeSpent) { // if such time value exists
-            this.DialogInputTimeSpent = this.DialogInputTimeSpent.filter(
-                (value) => Base.stringToTime(value) > 0); // filter out everything "bigger" than "0m" or "0h"
-
-                // execute checkTime() to get first hours and minutes values and then join it into a string
-            this.DialogInputTimeSpent = this.DialogInputTimeSpent.join(' ');
+                // find correct time values, keep only those bigger than 0 and join them into string.
+            this.DialogInputTimeSpent = Base.Dialogs[type].inputs.DOM['time-spent'].value.match(regExp).filter(
+                (value) => Base.stringToTime(value) > 0).join(' ');
             return {result: true, reason: ''};
         }
         return {result: false, reason: Base.message.warning.invalidValue}; // if no valid time values were given
@@ -1240,13 +1187,9 @@ let Dialog = new DialogClass;
 
 class Main {
     constructor() {
-         // it's important to invoke Dialog.init() here
-        Dialog.noCancelListeners = true;
         Dialog.createOverlay();
-        Dialog.init(Base.Dialogs.types.cancel);
-        Dialog.init(Base.Dialogs.types.logTime);
-        Dialog.init(Base.Dialogs.types.cardEdit);
-        Dialog.init(Base.Dialogs.types.confirmDelete);
+            // it's important to invoke Dialog.init() here
+        for (let type of Object.values(Base.Dialogs.types)) Dialog.init(type);
     }
 
     init(columnQuantity = 5) {
