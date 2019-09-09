@@ -25,6 +25,9 @@ class BaseClass {
             DOM: {
                 0: {}
             },
+            cards: {
+                0: {}
+            },
             dayNames: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] // displayed in Column head
         };
         this.Cards = {
@@ -126,6 +129,15 @@ class BaseClass {
                 } else {
                     console.error(Base.message.error.invalidClassName);
                 }
+            }
+            return this;
+        };
+
+        Element.prototype.toggleClass = function(className) {
+            if (typeof className === 'string') {
+                this.classList.toggle(className);
+            } else if (typeof className === 'object') {
+                console.error(Base.message.error.invalidClassName);
             }
             return this;
         };
@@ -278,7 +290,7 @@ class CardClass extends HTMLElement {
         this.renderCard(Base.Cards.DOM[cardId].card, '', 'update');
     }
 
-    create(parentId) {
+    create(columnNo) {
         /*  Input: parentId (string)
             Output: Card element (Node)
             Method creates a <log-card></log-card> element (a "Card"), that displays a task.
@@ -287,12 +299,19 @@ class CardClass extends HTMLElement {
          */
             // Card element
         Base.Cards.DOM[`card-${Base.Cards.count}`] = {};
+
+        if (!this.state) this.state = {};
+        this.state[Base.Cards.count] = {
+            selectable: false,
+            selected: false,
+        };
+
         let newCard = Base.createElement('log-card',
             {'class': ['column__card', 'card'], 'id': `card-${Base.Cards.count}`},
-            Base.Columns.DOM[Base.idNumber(parentId)].body);
+            Base.Columns.DOM[columnNo].body);
         Base.Cards.DOM[`card-${Base.Cards.count}`].card = newCard;
 
-        this.addToElementsObject(parentId); // new card will be added to Base.Cards object.
+        this.addToElementsObject(columnNo); // new card will be added to Base.Cards object.
 
         this.createCardHeader(newCard);
         this.createCardBody(newCard);
@@ -322,6 +341,10 @@ class CardClass extends HTMLElement {
             renderPart(element, card.id, 'taskName');
         } else if (update.includes('logged-time')) {
             element.innerText = Base.Cards.children[card.id].timeLogged.string;
+        } else if (update.includes('selectable')) {
+            card.toggleClass('card--selectable');
+        } else if (update.includes('selected')) {
+            card.toggleClass('card--selected');
         } else if (update === 'update') {
             renderPart(Base.Cards.DOM[card.id].bodyDescription, card.id, 'description');
             renderPart(Base.Cards.DOM[card.id].footerTaskName, card.id, 'taskName');
@@ -332,6 +355,7 @@ class CardClass extends HTMLElement {
                 Base.Cards.children[card.id].timeLogged.string;
         } else if (update === 'delete') {
             card.parentNode.removeChild(card);
+            delete Base.Cards.DOM[card.id];
         }
     }
 
@@ -345,13 +369,14 @@ class CardClass extends HTMLElement {
         iconElement.addClass(`status-icon__${Base.Cards.children[card.id].taskType}`);
     }
 
-    addToElementsObject(parentId) {
+    addToElementsObject(columnNo) {
         /*  Input: id of a column in which the Card is supposed to be created in (string)
             Output: -
             Method adds parent column id and card id (card number) to Elements object.
          */
-        Base.Cards.children[`card-${Base.Cards.count}`].parentId = parentId;
+        Base.Cards.children[`card-${Base.Cards.count}`].parentId = `column-${columnNo}`;
         Base.Cards.children[`card-${Base.Cards.count}`].id = Base.Cards.count;
+        Base.Columns.cards[columnNo][Base.Cards.count] = Base.Cards.DOM[`card-${Base.Cards.count}`].card;
     }
 
     createCardHeader(newCard) {
@@ -377,12 +402,13 @@ class CardClass extends HTMLElement {
         newCardDeleteSpan.innerText = '+';
     }
 
-    delete(type, cardId) {
+    delete(type, cardId, columnId) {
+        if (!columnId) columnId = Dialog.state[type].openedBy;
         Column.getTimeLogged(Base.Cards.children[cardId].timeLogged.number,
-            Dialog.state[type].openedBy, type, cardId);
+            columnId, type, cardId);
 
         delete Base.Cards.children[cardId];
-
+        delete Base.Columns.cards[Base.idNumber(columnId)][Base.idNumber(cardId)];
         this.renderCard(Base.Cards.DOM[cardId].card, '', 'delete');
     }
 
@@ -431,6 +457,11 @@ class CardClass extends HTMLElement {
         Base.Cards.DOM[`card-${Base.Cards.count}`].footerLoggedTime = newCardFooterLoggedTime;
     }
 
+    select(cardNo) {
+        this.state[cardNo].selected = !this.state[cardNo].selected;
+        this.renderCard(Base.Cards.DOM[`card-${cardNo}`].card, '', 'selected');
+    }
+
     addListener(newCard) {
         /*  Input: newCard (Node)
             Output: -
@@ -439,8 +470,13 @@ class CardClass extends HTMLElement {
         newCard.addEventListener('mouseup', (event) => {
             event.stopPropagation();
             if (event.button === 0) { // left mouse button only
-            Dialog.fetchDataFromCard(Base.Dialogs.types.cardEdit, newCard.id);
-            Dialog.open(Base.Dialogs.types.cardEdit, Base.Cards.children[newCard.id].parentId, newCard.id);
+                let cardNo = Base.idNumber(newCard.id);
+                if (!this.state[cardNo].selectable) {
+                    Dialog.fetchDataFromCard(Base.Dialogs.types.cardEdit, newCard.id);
+                    Dialog.open(Base.Dialogs.types.cardEdit, Base.Cards.children[newCard.id].parentId, newCard.id);
+                } else {
+                    this.select(cardNo);
+                }
             }
         });
 
@@ -514,8 +550,13 @@ class ColumnClass extends HTMLElement {
 
             // create new sub object
         Base.Columns.DOM[++Base.Columns.count] = {};
+        Base.Columns.cards[Base.Columns.count] = {};
 
-            // a Column element.
+            // create state object
+        if (!this.state) this.state = {};
+        this.state[Base.Columns.count] = {};
+
+        // a Column element.
         let newColumn = Base.createElement('log-column',
             {'class': 'column', 'id': `column-${Base.Columns.count}`},
             Base.Main);
@@ -596,6 +637,14 @@ class ColumnClass extends HTMLElement {
         let newColumnHeadTitle = Base.createElement('h2',
             {'class': 'column__title'}, newColumnHead);
         newColumnHeadTitle.innerText = Base.Columns.children[Base.Columns.count].title;
+
+        let newColumnHeadRemoveTasks = Base.createElement('div',
+            {'class': 'column__remove-tasks'}, newColumnHead);
+        Base.Columns.DOM[Base.Columns.count].removeTasks = newColumnHeadRemoveTasks;
+
+        let newColumnHeadRemoveTasksSpan = Base.createElement('span',
+            {'class': 'column__remove-tasks-span'}, newColumnHeadRemoveTasks);
+        newColumnHeadRemoveTasksSpan.innerText = '+';
     }
 
     createColumnBody(newColumn) {
@@ -621,20 +670,80 @@ class ColumnClass extends HTMLElement {
 
         let newColumnButtonAdd = Base.createElement('button',
             {'class': ['buttons__add-task', 'button', 'column__button']}, newColumnButtons);
+        Base.Columns.DOM[Base.Columns.count].buttonAdd = newColumnButtonAdd;
 
         let newColumnButtonRemove = Base.createElement('button',
             {'class': ['buttons__remove', 'button', 'column__button']}, newColumnButtons);
+        Base.Columns.DOM[Base.Columns.count].buttonRemove = newColumnButtonRemove;
     }
 
-    addButtonListener(parentId) {
+    addButtonListener(columnId) {
         /*  Input: Column id (string)
             Output: -
             Adds an EventListener to Column buttons.
             Add-task button will open a Dialog and if the Dialog.open() return true, it will create a Card.
          */
-        Base.Dom(`#${parentId} .buttons__add-task`)[0].addEventListener('click', function() {
-            if (Dialog.open(Base.Dialogs.types.logTime, parentId)) Card.create(parentId);
+        Base.Columns.DOM[Base.Columns.count].buttonAdd.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (!this.state[Base.idNumber(columnId)].cardSelection) {
+                if (Dialog.open(Base.Dialogs.types.logTime, columnId))
+                    Card.create(Base.Columns.count);
+            }
         });
+        Base.Columns.DOM[Base.Columns.count].buttonRemove.addEventListener('click', (event) => {
+            event.stopPropagation();
+            let columnNo = Base.idNumber(columnId);
+            if (this.containsCards(columnNo)) {
+                if (this.state[columnNo].cardSelection) {
+                    if (this.selectedCards(columnNo)) {
+                        this.removeSelectedCards(columnNo);
+                    } else {
+                        this.toggleSelectable(columnNo, true);
+                    }
+                } else {
+                    this.toggleSelectable(columnNo);
+                }
+            }
+        });
+
+        Base.Columns.DOM[Base.Columns.count].removeTasks.addEventListener('mouseup', (event) => {
+            event.stopPropagation();
+            if (event.button === 0) {
+                let columnNo = Base.idNumber(columnId);
+                for (let cardNo of Object.keys(Base.Columns.cards[columnNo])) {
+                    if (Card.state[cardNo].selected)
+                        Card.delete(Base.Dialogs.types.confirmDelete, `card-${cardNo}`, columnId);
+                }
+                this.toggleSelectable(columnNo);
+            }
+        })
+    }
+
+    containsCards(columnNo) {
+        return Object.keys(Base.Columns.cards[columnNo]).length > 0;
+    }
+
+    toggleSelectable(columnNo, clear = false) {
+        this.state[columnNo].cardSelection = !this.state[columnNo].cardSelection;
+        Base.Columns.DOM[columnNo].removeTasks.toggleClass('column__remove-tasks--visible');
+
+        Base.Columns.DOM[columnNo].buttonAdd.toggleClass('column__add-task--disabled');
+
+        for (let cardNo of Object.keys(Base.Columns.cards[columnNo])) {
+            Card.state[cardNo].selectable = !Card.state[cardNo].selectable;
+
+            if (clear && Card.state[cardNo].selected) Card.select(cardNo);
+
+            Card.renderCard(Base.Cards.DOM[`card-${cardNo}`].card, '', 'selectable');
+        }
+    }
+
+    selectedCards(columnNo) {
+
+    }
+
+    removeSelectedCards(columnNo) {
+
     }
 
     getTimeLogged(time, columnId, type, cardId) {
@@ -863,7 +972,7 @@ class DialogClass extends HTMLElement {
                     Card.fetchDataFromDialog(type);
                     Column.getTimeLogged(Base.Cards.children[`card-${Base.Cards.count}`].timeLogged.number,
                         this.state[type].openedBy, type);
-                    Card.create(this.state[type].openedBy);
+                    Card.create(Base.idNumber(this.state[type].openedBy));
                     this.close(type);
                 }
             });
@@ -1075,7 +1184,6 @@ class Main {
     createColumns(quantity) {
         for (let i = 0; i < quantity; i++) Column.create(quantity);
     }
-
 }
 
 (new Main()).init(5);
