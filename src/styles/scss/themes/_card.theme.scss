@@ -2,6 +2,14 @@
   background-color: map-get($main, 50);
   border-color: map-get($main, 600);
 
+  &.card--selectable {
+    border-color: map-get($accents, 300);
+  }
+
+  &.card--selected {
+    background-color: map-get($accents, 10);
+  }
+
   .card__name {
     color: map-get($accents, 900);
   }
@@ -20,5 +28,9 @@
     &:hover {
       background-color: map-get($main, 500);
     }
+  }
+
+  .card--selection {
+    background-color: rgba(map-get($main, 300), 0.2);
   }
 }

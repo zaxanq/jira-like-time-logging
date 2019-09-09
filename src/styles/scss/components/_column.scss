@@ -75,6 +75,47 @@ $progress-height: 1.4rem;
   letter-spacing: 0.05rem;
 }
 
+$size: 3.6rem;
+.column__delete-controls {
+  @include flex(space-between, center);
+  position: absolute;
+  top: -$size * 1.1;
+  width: 100%;
+  height: $size;
+
+  &--visible {
+    top: 3.6rem;
+  }
+  transition: top 0.3s cubic-bezier(1, 0.1, 0, 0.9);
+}
+
+.column__remove-tasks,
+.column__button-deselect,
+.column__button-select-all {
+  @include flex(center, center);
+  border: 0.2rem solid;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.column__remove-tasks {
+  @include size($size);
+  border-radius: 50%;
+}
+
+.column__remove-tasks-span {
+  display: inline-block;
+  font-size: 3rem;
+  transform: rotate(45deg);
+}
+
+.column__button-deselect,
+.column__button-select-all {
+  padding: 0.5rem;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+}
+
 .column__body {
   width: 100%;
   @include flex(flex-start, center, column);
@@ -134,6 +175,10 @@ $progress-height: 1.4rem;
   &::before {
     content: '+';
   }
+}
+
+.column__add-task--disabled {
+  pointer-events: none;
 }
 
 .buttons__remove {
