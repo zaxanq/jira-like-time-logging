@@ -1,5 +1,7 @@
 # jira-like-time-logging
 Vanilla Javascript project based on JIRA time logging.
+
+[Live](http://kosmowski.ct8.pl/time-logging/)
 ## Table of contents
 * [Used technologies](#used-technologies)
 * [How to start](#how-to-start)
