@@ -92,7 +92,8 @@ class BaseClass {
             warning: {
                 requiredInput: 'This input is required.',
                 invalidValue: 'Invalid time value',
-                invalidTaskNameFormat: 'Invalid task name format',
+                valuesEqualToZero: 'Time values need to be bigger than 0m',
+                invalidTaskNameFormat: 'Invalid format, please use: ABC-123',
             },
             error: {
                 invalidClassName: 'Invalid type of class name or class names container.',
@@ -1150,7 +1151,7 @@ class DialogClass extends HTMLElement {
         this.DialogInputTaskName = Base.Dialogs[type].inputs.DOM['task-name'].value.match(regExp);
 
         if (this.DialogInputTaskName) return {result: true, reason: ''};
-        return {result: false, reason: Base.message.warning.invalidTaskNameFormat};
+        return {result: false, reason: 'invalidTaskNameFormat'};
     }
 
     checkInputTimeSpent(type) {
@@ -1162,11 +1163,19 @@ class DialogClass extends HTMLElement {
             // get all time values (i.e "30m", "5h", "4h20m", "5h 50m", "50m1h", "40m 4h")
         if (type === Base.Dialogs.types.logTime || type === Base.Dialogs.types.cardEdit) {
                 // find correct time values, keep only those bigger than 0 and join them into string.
-            this.DialogInputTimeSpent = Base.Dialogs[type].inputs.DOM['time-spent'].value.match(regExp).filter(
-                (value) => Base.stringToTime(value) > 0).join(' ');
+            this.DialogInputTimeSpent = Base.Dialogs[type].inputs.DOM['time-spent'].value.match(regExp);
+            console.log(this.DialogInputTimeSpent);
+            if (this.DialogInputTimeSpent) { // if there are any may-be-valid values
+                this.DialogInputTimeSpent = this.DialogInputTimeSpent.filter(
+                    (value) => Base.stringToTime(value) > 0).join(' ');
+
+                if (this.DialogInputTimeSpent.length > 0) return {result: true, reason: ''};
+                else return {result: false, reason: 'valuesEqualToZero'}; // if no valid time values were given
+            } else {
+                return {result: false, reason: 'invalidValue'}; // if no valid time values were given
+            }
             return {result: true, reason: ''};
         }
-        return {result: false, reason: Base.message.warning.invalidValue}; // if no valid time values were given
     }
 
     fetchDataFromCard(type, cardId) {
