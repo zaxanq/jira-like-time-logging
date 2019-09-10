@@ -1,5 +1,6 @@
 $column-head-border-width: 0.2rem;
 $column-title-font-size: 1.1rem;
+$column-horizontal-padding: 1rem;
 
 log-column {
   box-sizing: border-box;
@@ -13,7 +14,7 @@ log-column {
   height: inherit;
   border-left: 0.1rem solid;
   border-right: 0.1rem solid;
-  padding: 0 1rem;
+  padding: 0 $column-horizontal-padding;
   overflow: hidden;
 
   &:hover {
@@ -50,6 +51,7 @@ log-column {
 
 .column__hours {
   font-weight: 500;
+  letter-spacing: -0.05rem;
 }
 
 $progress-height: 1.4rem;
@@ -77,10 +79,10 @@ $progress-height: 1.4rem;
 
 $size: 3.6rem;
 .column__delete-controls {
-  @include flex(space-between, center);
+  @include flex(space-around, center);
   position: absolute;
   top: -$size * 1.1;
-  width: 100%;
+  width: calc(100% + 2 * #{$column-horizontal-padding});
   height: $size;
 
   &--visible {
@@ -93,13 +95,14 @@ $size: 3.6rem;
 .column__button-deselect,
 .column__button-select-all {
   @include flex(center, center);
-  border: 0.2rem solid;
+  border: 0.1rem solid;
   cursor: pointer;
   overflow: hidden;
 }
 
 .column__remove-tasks {
   @include size($size);
+  min-width: $size;
   border-radius: 50%;
 }
 
@@ -111,9 +114,12 @@ $size: 3.6rem;
 
 .column__button-deselect,
 .column__button-select-all {
+  min-width: 32%;
   padding: 0.5rem;
   font-size: 1.2rem;
   text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: $common-border-radius;
 }
 
 .column__body {

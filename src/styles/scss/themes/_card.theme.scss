@@ -8,6 +8,10 @@
 
   &.card--selected {
     background-color: map-get($accents, 10);
+
+    .card__description {
+      color: map-get($dark, 300);
+    }
   }
 
   .card__name {
@@ -28,9 +32,5 @@
     &:hover {
       background-color: map-get($main, 500);
     }
-  }
-
-  .card--selection {
-    background-color: rgba(map-get($main, 300), 0.2);
   }
 }
